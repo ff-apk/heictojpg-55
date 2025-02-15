@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import heic2any from "heic2any";
 
@@ -26,14 +26,6 @@ export const useHeicConverter = () => {
     return (savedFormat as ImageFormat) || 'jpg';
   });
   const { toast } = useToast();
-
-  useEffect(() => {
-    return () => {
-      images.forEach(image => {
-        URL.revokeObjectURL(image.previewUrl);
-      });
-    };
-  }, [images]);
 
   const detectFileType = async (file: File): Promise<FileTypeResult> => {
     return new Promise((resolve, reject) => {
@@ -103,8 +95,10 @@ export const useHeicConverter = () => {
 
   const getNewFileName = (originalName: string, detectedExtension?: string) => {
     if (detectedExtension) {
+      // If we detected a non-HEIC type, use its extension
       return originalName.replace(/\.(heic|heif)$/i, detectedExtension);
     }
+    // Otherwise use the selected format
     return originalName.replace(/\.(heic|heif)$/i, `.${format}`);
   };
 
@@ -140,44 +134,34 @@ export const useHeicConverter = () => {
     });
   };
 
-  const generatePreview = async (file: File, isHeic: boolean): Promise<string> => {
-    if (!isHeic) {
-      const blob = new Blob([file], { type: file.type });
-      return URL.createObjectURL(blob);
-    }
-
-    const previewBlob = await heic2any({
-      blob: file,
-      toType: 'image/jpeg',
-      quality: 0.8,
-    }) as Blob;
-
-    return URL.createObjectURL(previewBlob);
-  };
-
   const convertHeicToFormat = async (file: File): Promise<{ blob: Blob, previewUrl: string, detectedType?: FileTypeResult }> => {
     try {
+      // First, detect the actual file type
       const detectedType = await detectFileType(file);
-      const isHeic = isHeicOrHeif(detectedType.mimeType);
       
-      const previewUrl = await generatePreview(file, isHeic);
-
-      if (!isHeic) {
+      // If it's not actually a HEIC/HEIF file
+      if (!isHeicOrHeif(detectedType.mimeType)) {
+        // Create a new blob with the correct mime type
         const nonHeicBlob = new Blob([file], { type: detectedType.mimeType });
+        const previewUrl = URL.createObjectURL(nonHeicBlob);
         return { blob: nonHeicBlob, previewUrl, detectedType };
       }
 
+      // If it is a HEIC/HEIF file, proceed with conversion
       let convertedBlob: Blob;
 
       if (format === 'webp') {
+        // First convert to PNG
         const pngBlob = await heic2any({
           blob: file,
           toType: 'image/png',
           quality: 0.95,
         }) as Blob;
 
+        // Then convert PNG to WEBP
         convertedBlob = await convertPngToWebp(pngBlob);
       } else {
+        // Direct conversion for JPG/PNG
         convertedBlob = await heic2any({
           blob: file,
           toType: `image/${format === 'jpg' ? 'jpeg' : format}`,
@@ -185,6 +169,7 @@ export const useHeicConverter = () => {
         }) as Blob;
       }
 
+      const previewUrl = URL.createObjectURL(convertedBlob);
       return { blob: convertedBlob, previewUrl };
     } catch (error) {
       console.error('Error converting image:', error);
@@ -226,6 +211,7 @@ export const useHeicConverter = () => {
         validFiles.map(async (file) => {
           const { blob, previewUrl, detectedType } = await convertHeicToFormat(file);
           
+          // If we detected a non-HEIC type, use its details
           const fileName = getNewFileName(file.name, detectedType?.extension);
           
           if (detectedType && !isHeicOrHeif(detectedType.mimeType)) {
@@ -246,13 +232,7 @@ export const useHeicConverter = () => {
         })
       );
 
-      setImages(prev => {
-        prev.forEach(image => {
-          URL.revokeObjectURL(image.previewUrl);
-        });
-        return [...newImages, ...prev];
-      });
-
+      setImages(prev => [...newImages, ...prev]);
       toast({
         title: "Processing complete",
         description: `Successfully processed ${newImages.length} image${newImages.length > 1 ? 's' : ''}.`,
