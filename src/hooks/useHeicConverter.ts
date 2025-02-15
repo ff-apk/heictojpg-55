@@ -124,30 +124,55 @@ export const useHeicConverter = () => {
     });
 
     try {
-      const newImages = await Promise.all(
+      const results = await Promise.allSettled(
         validFiles.map(async (file) => {
-          const { blob, previewUrl } = await convertHeicToFormat(file);
-          return {
-            id: Math.random().toString(36).substr(2, 9),
-            originalFile: file,
-            previewUrl,
-            fileName: getNewFileName(file.name),
-            exifData: null,
-            convertedBlob: blob,
-          };
+          try {
+            const { blob, previewUrl } = await convertHeicToFormat(file);
+            return {
+              id: Math.random().toString(36).substr(2, 9),
+              originalFile: file,
+              previewUrl,
+              fileName: getNewFileName(file.name),
+              exifData: null,
+              convertedBlob: blob,
+            };
+          } catch (error) {
+            console.error(`Failed to convert ${file.name}:`, error);
+            throw new Error(`Failed to convert ${file.name}`);
+          }
         })
       );
 
-      setImages(prev => [...newImages, ...prev]);
-      toast({
-        title: "Conversion complete",
-        description: `Successfully converted ${newImages.length} image${newImages.length > 1 ? 's' : ''}.`,
-      });
+      const successfulConversions = results
+        .filter((result): result is PromiseFulfilledResult<ConvertedImage> => 
+          result.status === 'fulfilled'
+        )
+        .map(result => result.value);
+
+      const failedConversions = results.filter(
+        result => result.status === 'rejected'
+      );
+
+      if (successfulConversions.length > 0) {
+        setImages(prev => [...successfulConversions, ...prev]);
+        toast({
+          title: "Conversion complete",
+          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''}.`,
+        });
+      }
+
+      if (failedConversions.length > 0) {
+        toast({
+          title: "Some conversions failed",
+          description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert.`,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error('Conversion error:', error);
+      console.error('Unexpected error during conversion:', error);
       toast({
-        title: "Conversion failed",
-        description: "Failed to convert some images. Please try again.",
+        title: "Unexpected error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     }
