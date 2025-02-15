@@ -14,13 +14,6 @@ interface ConvertedImage {
   convertedBlob: Blob | null;
 }
 
-const VALID_HEIC_TYPES = [
-  'image/heic',
-  'image/heif',
-  'image/heic-sequence',
-  'image/heif-sequence'
-];
-
 export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -31,29 +24,10 @@ export const useHeicConverter = () => {
   const { toast } = useToast();
 
   const isHeicOrHeif = (file: File) => {
-    return VALID_HEIC_TYPES.includes(file.type) || 
+    return file.type === 'image/heic' || 
+           file.type === 'image/heif' || 
            file.name.toLowerCase().endsWith('.heic') || 
            file.name.toLowerCase().endsWith('.heif');
-  };
-
-  const checkActualMimeType = async (file: File): Promise<boolean> => {
-    try {
-      const arrayBuffer = await file.slice(0, 12).arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      
-      // HEIC/HEIF files typically start with 'ftypheic' or 'ftypheix' after their initial bytes
-      const signature = Array.from(uint8Array.slice(4, 12))
-        .map(byte => String.fromCharCode(byte))
-        .join('');
-      
-      return signature.includes('ftyp') && 
-             (signature.includes('heic') || 
-              signature.includes('heix') || 
-              signature.includes('heif'));
-    } catch (error) {
-      console.error('Error checking file type:', error);
-      return false;
-    }
   };
 
   const getNewFileName = (originalName: string) => {
@@ -94,11 +68,6 @@ export const useHeicConverter = () => {
 
   const convertHeicToFormat = async (file: File): Promise<{ blob: Blob, previewUrl: string }> => {
     try {
-      const isActualHeicHeif = await checkActualMimeType(file);
-      if (!isActualHeicHeif) {
-        throw new Error('Not a valid HEIC/HEIF file');
-      }
-
       let convertedBlob: Blob;
 
       if (format === 'webp') {
@@ -138,9 +107,9 @@ export const useHeicConverter = () => {
       return;
     }
 
-    const potentialHeicFiles = Array.from(files).filter(isHeicOrHeif);
-    
-    if (potentialHeicFiles.length === 0) {
+    const validFiles = Array.from(files).filter(isHeicOrHeif);
+
+    if (validFiles.length === 0) {
       toast({
         title: "Invalid files",
         description: "Please select HEIC or HEIF images only",
@@ -155,55 +124,25 @@ export const useHeicConverter = () => {
     });
 
     try {
-      const results = await Promise.allSettled(
-        potentialHeicFiles.map(async (file) => {
-          try {
-            const { blob, previewUrl } = await convertHeicToFormat(file);
-            return {
-              success: true,
-              data: {
-                id: Math.random().toString(36).substr(2, 9),
-                originalFile: file,
-                previewUrl,
-                fileName: getNewFileName(file.name),
-                exifData: null,
-                convertedBlob: blob,
-              },
-            };
-          } catch (error) {
-            return { success: false, file };
-          }
+      const newImages = await Promise.all(
+        validFiles.map(async (file) => {
+          const { blob, previewUrl } = await convertHeicToFormat(file);
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            originalFile: file,
+            previewUrl,
+            fileName: getNewFileName(file.name),
+            exifData: null,
+            convertedBlob: blob,
+          };
         })
       );
 
-      const successfulConversions = results
-        .filter((result): result is PromiseFulfilledResult<{ success: true, data: ConvertedImage }> => 
-          result.status === 'fulfilled' && result.value.success
-        )
-        .map(result => result.value.data);
-
-      const failedConversions = results
-        .filter((result): result is PromiseFulfilledResult<{ success: false, file: File }> => 
-          result.status === 'fulfilled' && !result.value.success
-        )
-        .length;
-
-      setImages(prev => [...successfulConversions, ...prev]);
-      
+      setImages(prev => [...newImages, ...prev]);
       toast({
         title: "Conversion complete",
-        description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''}.`,
+        description: `Successfully converted ${newImages.length} image${newImages.length > 1 ? 's' : ''}.`,
       });
-
-      if (failedConversions > 0) {
-        setTimeout(() => {
-          toast({
-            title: "Non-HEIC images excluded",
-            description: `${failedConversions} non-HEIC image${failedConversions > 1 ? 's were' : ' was'} excluded.`,
-            variant: "destructive",
-          });
-        }, 3000);
-      }
     } catch (error) {
       console.error('Conversion error:', error);
       toast({
