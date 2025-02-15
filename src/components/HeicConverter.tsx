@@ -66,13 +66,12 @@ const HeicConverter = () => {
           {isDragging ? "Drop Images Here" : "Upload or Drop Images"}
         </Button>
 
-        {images.length > 0 && (
           <div className="flex justify-center">
             <Select 
               value={format} 
               onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
             >
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-[90px]">
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>
               <SelectContent>
@@ -82,6 +81,16 @@ const HeicConverter = () => {
               </SelectContent>
             </Select>
           </div>
+
+        {images.length > 0 && (
+          <Button 
+            onClick={reset} 
+            variant="outline" 
+            className="w-30 gap-2"
+          >
+            <RefreshCcw className="w-5 h-5" />
+            Reset
+          </Button>
         )}
 
         {images.map((image, index) => (
@@ -115,16 +124,6 @@ const HeicConverter = () => {
           </React.Fragment>
         ))}
 
-        {images.length > 0 && (
-          <Button 
-            onClick={reset} 
-            variant="outline" 
-            className="w-full gap-2"
-          >
-            <RefreshCcw className="w-5 h-5" />
-            Reset
-          </Button>
-        )}
       </div>
     </div>
   );
