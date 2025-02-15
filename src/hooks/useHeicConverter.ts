@@ -45,37 +45,30 @@ export const useHeicConverter = () => {
         let result: FileTypeResult = { mimeType: 'unknown', extension: '' };
 
         switch (header.toLowerCase()) {
-          case "ffd8ffe0":
-          case "ffd8ffe1":
-          case "ffd8ffe2":
-          case "ffd8ffe3":
-          case "ffd8ffe8":
-            result = { mimeType: 'image/jpeg', extension: '.jpg' };
-            break;
-          case "89504e47":
-            result = { mimeType: 'image/png', extension: '.png' };
-            break;
-          case "52494646":
-            result = { mimeType: 'image/webp', extension: '.webp' };
-            break;
-          case "47494638":
-            result = { mimeType: 'image/gif', extension: '.gif' };
-            break;
-          case "0000000c":
-          case "00000020":
-            result = { mimeType: 'image/heic', extension: '.heic' };
-            break;
-          case "4d4d002a":
-          case "49492a00":
-            result = { mimeType: 'image/tiff', extension: '.tiff' };
-            break;
-          default:
-            if (header.startsWith("0000000c66747970") || header.startsWith("0000002066747970")) {
-              result = { mimeType: 'image/heic', extension: '.heic' };
-            } else {
-              result = { mimeType: 'unknown', extension: '' };
-            }
-        }
+        case "ffd8ffe0":
+        case "ffd8ffe1":
+        case "ffd8ffe2":
+        case "ffd8ffe3":
+        case "ffd8ffe8":
+          result = { mimeType: 'image/jpeg', extension: '.jpg' };
+          break;
+        case "89504e47":
+          result = { mimeType: 'image/png', extension: '.png' };
+          break;
+        case "52494646":
+          result = { mimeType: 'image/webp', extension: '.webp' };
+          break;
+        case "47494638":
+          result = { mimeType: 'image/gif', extension: '.gif' };
+          break;
+        case "4d4d002a":
+        case "49492a00":
+          result = { mimeType: 'image/tiff', extension: '.tiff' };
+          break;
+        default:
+          // If nothing else matches, assume HEIC/HEIF.
+          result = { mimeType: 'image/heic', extension: '.heic' };
+      }
 
         resolve(result);
       };
