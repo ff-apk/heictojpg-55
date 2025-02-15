@@ -28,54 +28,61 @@ export const useHeicConverter = () => {
   const { toast } = useToast();
 
   const detectFileType = async (file: File): Promise<FileTypeResult> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = (event) => {
-      if (!event.target?.result) {
-        reject(new Error('Failed to read file'));
-        return;
-      }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = (event) => {
+        if (!event.target?.result) {
+          reject(new Error('Failed to read file'));
+          return;
+        }
 
-      const arr = new Uint8Array(event.target.result as ArrayBuffer).subarray(0, 12);
-      let header = "";
-      for (let i = 0; i < arr.length; i++) {
-        header += arr[i].toString(16).padStart(2, '0');
-      }
+        const arr = new Uint8Array(event.target.result as ArrayBuffer).subarray(0, 12);
+        let header = "";
+        for (let i = 0; i < arr.length; i++) {
+          header += arr[i].toString(16).padStart(2, '0');
+        }
 
-      let result: FileTypeResult = { mimeType: 'unknown', extension: '' };
+        let result: FileTypeResult = { mimeType: 'unknown', extension: '' };
 
-      switch (header.toLowerCase()) {
-        case "ffd8ffe0":
-        case "ffd8ffe1":
-        case "ffd8ffe2":
-        case "ffd8ffe3":
-        case "ffd8ffe8":
-          result = { mimeType: 'image/jpeg', extension: '.jpg' };
-          break;
-        case "89504e47":
-          result = { mimeType: 'image/png', extension: '.png' };
-          break;
-        case "52494646":
-          result = { mimeType: 'image/webp', extension: '.webp' };
-          break;
-        case "47494638":
-          result = { mimeType: 'image/gif', extension: '.gif' };
-          break;
-        case "4d4d002a":
-        case "49492a00":
-          result = { mimeType: 'image/tiff', extension: '.tiff' };
-          break;
-        default:
-          // If nothing else matches, assume HEIC/HEIF.
-          result = { mimeType: 'image/heic', extension: '.heic' };
-      }
+        switch (header.toLowerCase()) {
+          case "ffd8ffe0":
+          case "ffd8ffe1":
+          case "ffd8ffe2":
+          case "ffd8ffe3":
+          case "ffd8ffe8":
+            result = { mimeType: 'image/jpeg', extension: '.jpg' };
+            break;
+          case "89504e47":
+            result = { mimeType: 'image/png', extension: '.png' };
+            break;
+          case "52494646":
+            result = { mimeType: 'image/webp', extension: '.webp' };
+            break;
+          case "47494638":
+            result = { mimeType: 'image/gif', extension: '.gif' };
+            break;
+          case "0000000c":
+          case "00000020":
+            result = { mimeType: 'image/heic', extension: '.heic' };
+            break;
+          case "4d4d002a":
+          case "49492a00":
+            result = { mimeType: 'image/tiff', extension: '.tiff' };
+            break;
+          default:
+            if (header.startsWith("0000000c66747970") || header.startsWith("0000002066747970")) {
+              result = { mimeType: 'image/heic', extension: '.heic' };
+            } else {
+              result = { mimeType: 'unknown', extension: '' };
+            }
+        }
 
-      resolve(result);
-    };
-    reader.onerror = () => reject(new Error('File reading error'));
-    reader.readAsArrayBuffer(file.slice(0, 12));
-  });
-};
+        resolve(result);
+      };
+      reader.onerror = () => reject(new Error('File reading error'));
+      reader.readAsArrayBuffer(file.slice(0, 12));
+    });
+  };
 
   const isHeicOrHeif = (mimeType: string) => {
     return [
