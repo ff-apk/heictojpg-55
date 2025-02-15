@@ -6,19 +6,19 @@ import CalculatorHeader from "@/components/calculator/CalculatorHeader";
 import AdSenseHorizontal from "@/components/AdSenseHorizontal";
 import AdSenseResponsive from "@/components/AdSenseResponsive";
 import DesktopSidebar from "@/components/DesktopSidebar";
-import ClipboardImage from "@/components/ClipboardImage";
+import HeicConverter from "@/components/HeicConverter";
 import HomepageContent from "@/components/HomepageContent";
 
 const Index = () => {
   return (
     <>
       <SEO
-        title="Clipboard to Image - Paste Image to Download"
-        description="Easily download copied clipboard images with our free Clipboard to Image tool. Simply Paste Image to Download!"
+        title="HEIC to JPG - Convert HEIC Images to JPG Online"
+        description="Convert HEIC and HEIF images to JPG, PNG, or WEBP format online. View and process multiple images at once with our free converter."
         canonicalUrl="https://clipboard-to-image.toolyoulove.com/"
         robots="max-image-preview:large"
-        ogTitle="Clipboard to Image - Paste Image to Download"
-        ogDescription="Easily download copied clipboard images with our free Clipboard to Image tool. Simply Paste Image to Download!"
+        ogTitle="HEIC to JPG - Convert HEIC Images to JPG Online"
+        ogDescription="Convert HEIC and HEIF images to JPG, PNG, or WEBP format online. View and process multiple images at once with our free converter."
         ogUrl="https://clipboard-to-image.toolyoulove.com/"
         ogImage="https://clipboard-to-image.toolyoulove.com/banner.jpg"
         ogType="website"
@@ -28,7 +28,7 @@ const Index = () => {
           <AdSenseHorizontal />
           <CalculatorHeader />
           <div className="border border-border bg-card dark:bg-card rounded-xl p-6">
-            <ClipboardImage />
+            <HeicConverter />
           </div>
           <AdSenseResponsive />
           <HomepageContent />
@@ -41,4 +41,3 @@ const Index = () => {
 };
 
 export default Index;
-
