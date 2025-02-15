@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import heic2any from "heic2any";
@@ -96,8 +95,10 @@ export const useHeicConverter = () => {
 
   const getNewFileName = (originalName: string, detectedExtension?: string) => {
     if (detectedExtension) {
+      // If we detected a non-HEIC type, use its extension
       return originalName.replace(/\.(heic|heif)$/i, detectedExtension);
     }
+    // Otherwise use the selected format
     return originalName.replace(/\.(heic|heif)$/i, `.${format}`);
   };
 
@@ -133,82 +134,43 @@ export const useHeicConverter = () => {
     });
   };
 
-  const ensureProperConversion = async (blob: Blob, targetFormat: string): Promise<Blob> => {
-    // Create a canvas element to verify and ensure proper conversion
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0);
-        canvas.toBlob(
-          (convertedBlob) => {
-            if (convertedBlob) {
-              resolve(convertedBlob);
-            } else {
-              reject(new Error('Failed to convert image'));
-            }
-          },
-          targetFormat === 'jpg' ? 'image/jpeg' : `image/${targetFormat}`,
-          0.95
-        );
-      };
-      img.onerror = () => reject(new Error('Failed to load image for conversion'));
-      img.src = URL.createObjectURL(blob);
-    });
-  };
-
   const convertHeicToFormat = async (file: File): Promise<{ blob: Blob, previewUrl: string, detectedType?: FileTypeResult }> => {
     try {
+      // First, detect the actual file type
       const detectedType = await detectFileType(file);
       
+      // If it's not actually a HEIC/HEIF file
       if (!isHeicOrHeif(detectedType.mimeType)) {
+        // Create a new blob with the correct mime type
         const nonHeicBlob = new Blob([file], { type: detectedType.mimeType });
         const previewUrl = URL.createObjectURL(nonHeicBlob);
         return { blob: nonHeicBlob, previewUrl, detectedType };
       }
 
-      // Convert HEIC/HEIF to target format
-      const targetMimeType = format === 'jpg' ? 'image/jpeg' : `image/${format}`;
-      
-      // First convert to intermediate format using heic2any
-      const initialConversion = await heic2any({
-        blob: file,
-        toType: targetMimeType,
-        quality: 0.95
-      }) as Blob;
-
-      let finalBlob: Blob;
+      // If it is a HEIC/HEIF file, proceed with conversion
+      let convertedBlob: Blob;
 
       if (format === 'webp') {
-        // For WebP, we need two-step conversion
+        // First convert to PNG
         const pngBlob = await heic2any({
           blob: file,
           toType: 'image/png',
-          quality: 0.95
+          quality: 0.95,
         }) as Blob;
-        
-        // Convert PNG to WebP
-        const webpBlob = await convertPngToWebp(pngBlob);
-        // Ensure proper WebP conversion
-        finalBlob = await ensureProperConversion(webpBlob, 'webp');
+
+        // Then convert PNG to WEBP
+        convertedBlob = await convertPngToWebp(pngBlob);
       } else {
-        // Ensure proper conversion for JPG/PNG
-        finalBlob = await ensureProperConversion(initialConversion, format);
+        // Direct conversion for JPG/PNG
+        convertedBlob = await heic2any({
+          blob: file,
+          toType: `image/${format === 'jpg' ? 'jpeg' : format}`,
+          quality: 0.95,
+        }) as Blob;
       }
 
-      // Create preview URL from the converted blob
-      const previewUrl = URL.createObjectURL(finalBlob);
-
-      return { blob: finalBlob, previewUrl };
+      const previewUrl = URL.createObjectURL(convertedBlob);
+      return { blob: convertedBlob, previewUrl };
     } catch (error) {
       console.error('Error converting image:', error);
       throw error;
