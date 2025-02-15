@@ -34,18 +34,60 @@ export const useHeicConverter = () => {
     return originalName.replace(/\.(heic|heif)$/i, `.${format}`);
   };
 
+  const convertPngToWebp = async (pngBlob: Blob): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to convert to WEBP'));
+            }
+          },
+          'image/webp',
+          0.9
+        );
+      };
+      img.onerror = () => reject(new Error('Failed to load PNG image'));
+      img.src = URL.createObjectURL(pngBlob);
+    });
+  };
+
   const convertHeicToFormat = async (file: File): Promise<{ blob: Blob, previewUrl: string }> => {
     try {
-      const options = {
-        quality: format === 'webp' ? 0.9 : 0.95,
-        format: format === 'jpg' ? 'JPEG' : format.toUpperCase(),
-      };
+      let convertedBlob: Blob;
 
-      const convertedBlob = await heic2any({
-        blob: file,
-        toType: `image/${format === 'jpg' ? 'jpeg' : format}`,
-        quality: options.quality,
-      }) as Blob;
+      if (format === 'webp') {
+        // First convert to PNG
+        const pngBlob = await heic2any({
+          blob: file,
+          toType: 'image/png',
+          quality: 0.95,
+        }) as Blob;
+
+        // Then convert PNG to WEBP
+        convertedBlob = await convertPngToWebp(pngBlob);
+      } else {
+        // Direct conversion for JPG/PNG
+        convertedBlob = await heic2any({
+          blob: file,
+          toType: `image/${format === 'jpg' ? 'jpeg' : format}`,
+          quality: 0.95,
+        }) as Blob;
+      }
 
       const previewUrl = URL.createObjectURL(convertedBlob);
       return { blob: convertedBlob, previewUrl };
