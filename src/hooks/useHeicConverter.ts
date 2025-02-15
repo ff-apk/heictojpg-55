@@ -28,23 +28,23 @@ export const useHeicConverter = () => {
   const { toast } = useToast();
 
   const detectFileType = async (file: File): Promise<FileTypeResult> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = (event) => {
-        if (!event.target?.result) {
-          reject(new Error('Failed to read file'));
-          return;
-        }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = (event) => {
+      if (!event.target?.result) {
+        reject(new Error('Failed to read file'));
+        return;
+      }
 
-        const arr = new Uint8Array(event.target.result as ArrayBuffer).subarray(0, 12);
-        let header = "";
-        for (let i = 0; i < arr.length; i++) {
-          header += arr[i].toString(16).padStart(2, '0');
-        }
+      const arr = new Uint8Array(event.target.result as ArrayBuffer).subarray(0, 12);
+      let header = "";
+      for (let i = 0; i < arr.length; i++) {
+        header += arr[i].toString(16).padStart(2, '0');
+      }
 
-        let result: FileTypeResult = { mimeType: 'unknown', extension: '' };
+      let result: FileTypeResult = { mimeType: 'unknown', extension: '' };
 
-        switch (header.toLowerCase()) {
+      switch (header.toLowerCase()) {
         case "ffd8ffe0":
         case "ffd8ffe1":
         case "ffd8ffe2":
@@ -70,12 +70,12 @@ export const useHeicConverter = () => {
           result = { mimeType: 'image/heic', extension: '.heic' };
       }
 
-        resolve(result);
-      };
-      reader.onerror = () => reject(new Error('File reading error'));
-      reader.readAsArrayBuffer(file.slice(0, 12));
-    });
-  };
+      resolve(result);
+    };
+    reader.onerror = () => reject(new Error('File reading error'));
+    reader.readAsArrayBuffer(file.slice(0, 12));
+  });
+};
 
   const isHeicOrHeif = (mimeType: string) => {
     return [
