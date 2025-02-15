@@ -66,7 +66,7 @@ const HeicConverter = () => {
           {isDragging ? "Drop Images Here" : "Upload or Drop Images"}
         </Button>
 
-          <div className="flex justify-center">
+          <div className="flex justify-center space-x-4">
             <Select 
               value={format} 
               onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
