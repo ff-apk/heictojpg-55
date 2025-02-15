@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import * as HeicDecode from "heic-decode";
+import heic2any from "heic2any";
 
 type ImageFormat = 'jpg' | 'png' | 'webp';
 
@@ -35,39 +36,19 @@ export const useHeicConverter = () => {
 
   const convertHeicToFormat = async (file: File): Promise<{ blob: Blob, previewUrl: string }> => {
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const decoded = await HeicDecode.decode(arrayBuffer);
-      const canvas = document.createElement('canvas');
-      canvas.width = decoded.width;
-      canvas.height = decoded.height;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) throw new Error('Could not get canvas context');
-      
-      const imageData = new ImageData(
-        new Uint8ClampedArray(decoded.data),
-        decoded.width,
-        decoded.height
-      );
-      ctx.putImageData(imageData, 0, 0);
+      const options = {
+        quality: format === 'webp' ? 0.9 : 0.95,
+        format: format === 'jpg' ? 'JPEG' : format.toUpperCase(),
+      };
 
-      const mimeType = `image/${format}`;
-      const quality = format === 'webp' ? 0.9 : 0.95;
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: `image/${format === 'jpg' ? 'jpeg' : format}`,
+        quality: options.quality,
+      }) as Blob;
 
-      return new Promise((resolve, reject) => {
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const previewUrl = URL.createObjectURL(blob);
-              resolve({ blob, previewUrl });
-            } else {
-              reject(new Error('Conversion failed'));
-            }
-          },
-          mimeType,
-          quality
-        );
-      });
+      const previewUrl = URL.createObjectURL(convertedBlob);
+      return { blob: convertedBlob, previewUrl };
     } catch (error) {
       console.error('Error converting HEIC:', error);
       throw error;
@@ -95,6 +76,11 @@ export const useHeicConverter = () => {
       return;
     }
 
+    const toastId = toast({
+      title: "Converting images...",
+      description: "Please wait while we convert your images.",
+    });
+
     try {
       const newImages = await Promise.all(
         validFiles.map(async (file) => {
@@ -111,7 +97,12 @@ export const useHeicConverter = () => {
       );
 
       setImages(prev => [...newImages, ...prev]);
+      toast({
+        title: "Conversion complete",
+        description: `Successfully converted ${newImages.length} image${newImages.length > 1 ? 's' : ''}.`,
+      });
     } catch (error) {
+      console.error('Conversion error:', error);
       toast({
         title: "Conversion failed",
         description: "Failed to convert some images. Please try again.",
@@ -147,7 +138,6 @@ export const useHeicConverter = () => {
   };
 
   const handleExifData = async (imageId: string) => {
-    // TODO: Implement EXIF data extraction
     toast({
       title: "Coming Soon",
       description: "EXIF data extraction will be implemented soon",
