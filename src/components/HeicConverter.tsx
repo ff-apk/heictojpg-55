@@ -71,7 +71,7 @@ const HeicConverter = () => {
               value={format} 
               onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
             >
-              <SelectTrigger className="w-[90px]">
+              <SelectTrigger className="w-[90px] focus:ring-0 focus:outline-none">
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>
               <SelectContent>
@@ -80,7 +80,6 @@ const HeicConverter = () => {
                 <SelectItem value="webp">WEBP</SelectItem>
               </SelectContent>
             </Select>
-          </div>
 
         {images.length > 0 && (
           <Button 
@@ -92,6 +91,7 @@ const HeicConverter = () => {
             Reset
           </Button>
         )}
+            </div>
 
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
