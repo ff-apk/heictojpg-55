@@ -1,13 +1,12 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Info, MessageSquare, Image } from "lucide-react";
+import { Home, Info, MessageSquare } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 
 const Footer = () => {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
-  const isImageToClipboardPage = location.pathname === "/imagetoclipboard";
   const isAboutPage = location.pathname === "/about";
   const isFeedbackPage = location.pathname === "/feedback";
 
@@ -22,12 +21,6 @@ const Footer = () => {
           <Link to="/" className="inline-flex items-center gap-2 text-foreground hover:text-primary whitespace-nowrap">
             <Home className="h-4 w-4" />
             Home
-          </Link>
-        )}
-        {!isImageToClipboardPage && (
-          <Link to="/imagetoclipboard" className="inline-flex items-center gap-2 text-foreground hover:text-primary whitespace-nowrap">
-            <Image className="h-4 w-4" />
-            Image to Clipboard
           </Link>
         )}
         {!isAboutPage && (

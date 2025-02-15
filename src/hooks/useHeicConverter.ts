@@ -1,6 +1,6 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import * as HeicDecode from "heic-decode";
 
 type ImageFormat = 'jpg' | 'png' | 'webp';
 
@@ -10,6 +10,7 @@ interface ConvertedImage {
   previewUrl: string;
   fileName: string;
   exifData: null | Record<string, any>;
+  convertedBlob: Blob | null;
 }
 
 export const useHeicConverter = () => {
@@ -30,6 +31,47 @@ export const useHeicConverter = () => {
 
   const getNewFileName = (originalName: string) => {
     return originalName.replace(/\.(heic|heif)$/i, `.${format}`);
+  };
+
+  const convertHeicToFormat = async (file: File): Promise<{ blob: Blob, previewUrl: string }> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const decoded = await HeicDecode.decode(arrayBuffer);
+      const canvas = document.createElement('canvas');
+      canvas.width = decoded.width;
+      canvas.height = decoded.height;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) throw new Error('Could not get canvas context');
+      
+      const imageData = new ImageData(
+        new Uint8ClampedArray(decoded.data),
+        decoded.width,
+        decoded.height
+      );
+      ctx.putImageData(imageData, 0, 0);
+
+      const mimeType = `image/${format}`;
+      const quality = format === 'webp' ? 0.9 : 0.95;
+
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const previewUrl = URL.createObjectURL(blob);
+              resolve({ blob, previewUrl });
+            } else {
+              reject(new Error('Conversion failed'));
+            }
+          },
+          mimeType,
+          quality
+        );
+      });
+    } catch (error) {
+      console.error('Error converting HEIC:', error);
+      throw error;
+    }
   };
 
   const handleFiles = async (files: File[]) => {
@@ -53,22 +95,29 @@ export const useHeicConverter = () => {
       return;
     }
 
-    const newImages = await Promise.all(
-      validFiles.map(async (file) => {
-        // For now, we're just creating preview URLs
-        // TODO: Implement actual HEIC/HEIF conversion
-        const previewUrl = URL.createObjectURL(file);
-        return {
-          id: Math.random().toString(36).substr(2, 9),
-          originalFile: file,
-          previewUrl,
-          fileName: getNewFileName(file.name),
-          exifData: null,
-        };
-      })
-    );
+    try {
+      const newImages = await Promise.all(
+        validFiles.map(async (file) => {
+          const { blob, previewUrl } = await convertHeicToFormat(file);
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            originalFile: file,
+            previewUrl,
+            fileName: getNewFileName(file.name),
+            exifData: null,
+            convertedBlob: blob,
+          };
+        })
+      );
 
-    setImages(prev => [...newImages, ...prev]);
+      setImages(prev => [...newImages, ...prev]);
+    } catch (error) {
+      toast({
+        title: "Conversion failed",
+        description: "Failed to convert some images. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -107,15 +156,16 @@ export const useHeicConverter = () => {
 
   const downloadImage = async (imageId: string) => {
     const image = images.find(img => img.id === imageId);
-    if (!image) return;
+    if (!image || !image.convertedBlob) return;
 
-    // TODO: Implement actual conversion before download
+    const url = URL.createObjectURL(image.convertedBlob);
     const link = document.createElement("a");
-    link.href = image.previewUrl;
+    link.href = url;
     link.download = image.fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const reset = () => {
