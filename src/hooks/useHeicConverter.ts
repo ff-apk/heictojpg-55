@@ -5,19 +5,10 @@ import { ImageFormat, ConvertedImage } from "@/types/heicConverter";
 import { isHeicOrHeif, getNewFileName } from "@/utils/heicConverterUtils";
 import { convertHeicToFormat } from "@/services/heicConversionService";
 
-interface LightboxController {
-  toggler: boolean;
-  sourceIndex: number;
-}
-
 export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
-  const [lightboxController, setLightboxController] = useState<LightboxController>({
-    toggler: false,
-    sourceIndex: 0
-  });
   const [format, setFormat] = useState<ImageFormat>(() => {
     const savedFormat = localStorage.getItem('heic-convert-format');
     return (savedFormat as ImageFormat) || 'jpg';
@@ -27,15 +18,6 @@ export const useHeicConverter = () => {
   useEffect(() => {
     localStorage.setItem('heic-convert-format', format);
   }, [format]);
-
-  const toggleLightbox = (sourceIndex: number) => {
-    if (sourceIndex >= 0 && sourceIndex < images.length) {
-      setLightboxController(prev => ({
-        toggler: !prev.toggler,
-        sourceIndex
-      }));
-    }
-  };
 
   const handleFormatChange = async (newFormat: ImageFormat) => {
     if (isConverting) return;
@@ -169,9 +151,7 @@ export const useHeicConverter = () => {
       );
 
       if (successfulConversions.length > 0) {
-        // Append new images instead of prepending them
-        setImages(prev => [...prev, ...successfulConversions]);
-        
+        setImages(prev => [...successfulConversions, ...prev]);
         toast({
           title: "Conversion complete",
           description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
@@ -259,10 +239,6 @@ export const useHeicConverter = () => {
       URL.revokeObjectURL(image.previewUrl);
     });
     setImages([]);
-    setLightboxController({
-      toggler: false,
-      sourceIndex: 0
-    });
   };
 
   return {
@@ -270,7 +246,6 @@ export const useHeicConverter = () => {
     isDragging,
     format,
     isConverting,
-    lightboxController,
     setFormat: handleFormatChange,
     handleFiles,
     handleDragOver,
@@ -280,7 +255,5 @@ export const useHeicConverter = () => {
     handleExifData,
     downloadImage,
     reset,
-    toggleLightbox,
   };
 };
-
