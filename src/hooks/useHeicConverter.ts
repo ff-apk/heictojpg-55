@@ -97,16 +97,20 @@ export const useHeicConverter = () => {
   };
 
   const handleFiles = async (files: File[]) => {
-    if (files.length > 30) {
+    const MAX_FILES = 30;
+    const allFiles = Array.from(files);
+    const filesToProcess = allFiles.slice(0, MAX_FILES);
+    const excludedFiles = allFiles.slice(MAX_FILES);
+
+    if (excludedFiles.length > 0) {
       toast({
-        title: "Too many files",
-        description: "Please select up to 30 files",
-        variant: "destructive",
+        title: "Max upload limit is 30 at a time",
+        description: "Other images have been excluded.",
+        duration: 7000,
       });
-      return;
     }
 
-    const validFiles = Array.from(files).filter(isHeicOrHeif);
+    const validFiles = filesToProcess.filter(isHeicOrHeif);
 
     if (validFiles.length === 0) {
       toast({
