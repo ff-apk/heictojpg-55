@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw } from "lucide-react";
 import { useHeicConverter } from "@/hooks/useHeicConverter";
@@ -33,8 +33,6 @@ const HeicConverter = () => {
     reset,
     openImageInNewTab,
   } = useHeicConverter();
-
-  const [isFormatSelectOpen, setIsFormatSelectOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -77,16 +75,11 @@ const HeicConverter = () => {
           </div>
         </Button>
 
-        <div className={`flex justify-center space-x-4 transition-all duration-500 ${
-                isFormatSelectOpen ? "mb-32" : "mb-0"
-              }`}
-          >
+        <div className="flex justify-center space-x-4">
           <Select 
             value={format} 
             onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
             disabled={isConverting}
-            open={isFormatSelectOpen}
-            onOpenChange={setIsFormatSelectOpen}
           >
             <SelectTrigger className={cn(
               "w-[90px] focus:ring-0 focus:outline-none",
