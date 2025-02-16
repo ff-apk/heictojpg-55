@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -20,20 +19,16 @@ export const useHeicConverter = () => {
   });
   const { toast } = useToast();
 
-  // Format change effect
   useEffect(() => {
     localStorage.setItem('heic-convert-format', format);
     
-    // If there are images and we're not in the initial mount
     if (images.length > 0) {
-      // Store current file order and names, without extensions
       const currentImages = images.map(img => ({
         id: img.id,
         originalFile: img.originalFile,
-        fileName: img.fileName.substring(0, img.fileName.lastIndexOf('.')), // Keep base name without extension
+        fileName: img.fileName.substring(0, img.fileName.lastIndexOf('.')),
       }));
 
-      // Immediately update all file extensions to match new format
       setImages(prev => prev.map(img => ({
         ...img,
         fileName: `${img.fileName.substring(0, img.fileName.lastIndexOf('.'))}.${format}`
@@ -58,13 +53,12 @@ export const useHeicConverter = () => {
                     img.id === image.id ? {
                       ...img,
                       progress,
-                      fileName: `${image.fileName}.${format}` // Ensure extension matches current format during progress
+                      fileName: `${image.fileName}.${format}`
                     } : img
                   ));
                 }
               );
 
-              // Clean up old preview URL
               const oldImage = images.find(img => img.id === image.id);
               if (oldImage?.previewUrl) {
                 URL.revokeObjectURL(oldImage.previewUrl);
@@ -128,10 +122,8 @@ export const useHeicConverter = () => {
   };
 
   const validateFileName = (name: string, extension: string): string => {
-    // Remove invalid characters and trim
     let sanitized = name.replace(/[<>:"/\\|?*]/g, '').trim();
     
-    // Ensure we have a valid name
     if (!sanitized) {
       sanitized = 'image';
     }
@@ -151,16 +143,15 @@ export const useHeicConverter = () => {
       return;
     }
 
+    const oldFileName = image.fileName;
     const validatedFileName = validateFileName(newName, extension);
 
     setImages(prev => prev.map(img => {
       if (img.id === imageId) {
-        // Create new preview URL with the updated filename
         const newPreviewUrl = img.previewUrl 
           ? URL.createObjectURL(img.convertedBlob!)
           : img.previewUrl;
 
-        // Clean up old preview URL
         if (img.previewUrl) {
           URL.revokeObjectURL(img.previewUrl);
         }
@@ -178,7 +169,7 @@ export const useHeicConverter = () => {
 
     toast({
       title: "File renamed",
-      description: `Successfully renamed to ${validatedFileName}`,
+      description: `Successfully renamed ${oldFileName} to ${validatedFileName}`,
     });
   };
 
@@ -348,7 +339,6 @@ export const useHeicConverter = () => {
     const url = URL.createObjectURL(image.convertedBlob);
     window.open(url, '_blank');
     
-    // Clean up the URL after a short delay to ensure the new tab has loaded the image
     setTimeout(() => {
       URL.revokeObjectURL(url);
     }, 1000);

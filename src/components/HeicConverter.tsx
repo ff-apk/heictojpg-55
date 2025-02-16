@@ -50,7 +50,9 @@ const HeicConverter = () => {
 
   const handleEditSubmit = (imageId: string, event?: React.FormEvent) => {
     event?.preventDefault();
-    handleRename(imageId, editingName);
+    if (editingName.trim() !== "") {
+      handleRename(imageId, editingName);
+    }
     setEditingName("");
   };
 
@@ -172,6 +174,7 @@ const HeicConverter = () => {
                           type="text"
                           value={editingName}
                           onChange={(e) => setEditingName(e.target.value)}
+                          onBlur={() => handleEditSubmit(image.id)}
                           onKeyDown={(e) => {
                             if (e.key === 'Escape') {
                               handleEditCancel();
@@ -231,3 +234,4 @@ const HeicConverter = () => {
 };
 
 export default HeicConverter;
+
