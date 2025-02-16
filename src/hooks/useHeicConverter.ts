@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ImageFormat, ConvertedImage } from "@/types/heicConverter";
+import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
 import { isHeicOrHeif, getNewFileName } from "@/utils/heicConverterUtils";
 import { convertHeicToFormat } from "@/services/heicConversionService";
 import { MAX_FILES } from "@/constants/upload";
@@ -9,6 +9,10 @@ export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [editState, setEditState] = useState<EditState>({
+    imageId: null,
+    isEditing: false,
+  });
   const [format, setFormat] = useState<ImageFormat>(() => {
     const savedFormat = localStorage.getItem('heic-convert-format');
     return (savedFormat as ImageFormat) || 'jpg';
@@ -18,6 +22,69 @@ export const useHeicConverter = () => {
   useEffect(() => {
     localStorage.setItem('heic-convert-format', format);
   }, [format]);
+
+  const startEditing = (imageId: string) => {
+    setEditState({ imageId, isEditing: true });
+  };
+
+  const cancelEditing = () => {
+    setEditState({ imageId: null, isEditing: false });
+  };
+
+  const validateFileName = (name: string, extension: string): string => {
+    // Remove invalid characters and trim
+    let sanitized = name.replace(/[<>:"/\\|?*]/g, '').trim();
+    
+    // Ensure we have a valid name
+    if (!sanitized) {
+      sanitized = 'image';
+    }
+    
+    return `${sanitized}.${extension}`;
+  };
+
+  const handleRename = (imageId: string, newName: string) => {
+    const image = images.find(img => img.id === imageId);
+    if (!image) return;
+
+    const extension = image.fileName.split('.').pop() || format;
+    const currentName = image.fileName.replace(`.${extension}`, '');
+    
+    if (newName === currentName) {
+      cancelEditing();
+      return;
+    }
+
+    const validatedFileName = validateFileName(newName, extension);
+
+    setImages(prev => prev.map(img => {
+      if (img.id === imageId) {
+        // Create new preview URL with the updated filename
+        const newPreviewUrl = img.previewUrl 
+          ? URL.createObjectURL(img.convertedBlob!)
+          : img.previewUrl;
+
+        // Clean up old preview URL
+        if (img.previewUrl) {
+          URL.revokeObjectURL(img.previewUrl);
+        }
+
+        return {
+          ...img,
+          fileName: validatedFileName,
+          previewUrl: newPreviewUrl,
+        };
+      }
+      return img;
+    }));
+
+    cancelEditing();
+
+    toast({
+      title: "File renamed",
+      description: `Successfully renamed to ${validatedFileName}`,
+    });
+  };
 
   const handleFiles = async (files: File[]) => {
     const allFiles = Array.from(files);
@@ -203,6 +270,7 @@ export const useHeicConverter = () => {
     isDragging,
     format,
     isConverting,
+    editState,
     setFormat,
     handleFiles,
     handleDragOver,
@@ -213,5 +281,8 @@ export const useHeicConverter = () => {
     downloadImage,
     openImageInNewTab,
     reset,
+    startEditing,
+    cancelEditing,
+    handleRename,
   };
 };

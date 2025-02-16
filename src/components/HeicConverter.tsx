@@ -1,12 +1,13 @@
 
 import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Download, Info, RefreshCcw } from "lucide-react";
+import { Upload, Download, Info, RefreshCcw, Pencil } from "lucide-react";
 import { useHeicConverter } from "@/hooks/useHeicConverter";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { MAX_FILES } from "@/constants/upload";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -23,6 +24,7 @@ const HeicConverter = () => {
     isDragging,
     format,
     isConverting,
+    editState,
     setFormat,
     handleFiles,
     handleDragOver,
@@ -33,7 +35,29 @@ const HeicConverter = () => {
     downloadImage,
     reset,
     openImageInNewTab,
+    startEditing,
+    cancelEditing,
+    handleRename,
   } = useHeicConverter();
+
+  const [editingName, setEditingName] = useState("");
+
+  const handleEditStart = (imageId: string, currentName: string) => {
+    const baseName = currentName.substring(0, currentName.lastIndexOf('.'));
+    setEditingName(baseName);
+    startEditing(imageId);
+  };
+
+  const handleEditSubmit = (imageId: string, event?: React.FormEvent) => {
+    event?.preventDefault();
+    handleRename(imageId, editingName);
+    setEditingName("");
+  };
+
+  const handleEditCancel = () => {
+    setEditingName("");
+    cancelEditing();
+  };
 
   return (
     <div className="space-y-6">
@@ -137,9 +161,45 @@ const HeicConverter = () => {
                   >
                     <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
                   </div>
-                  <p className="text-center text-sm text-muted-foreground">
-                    {image.fileName}
-                  </p>
+                  
+                  <div className="flex items-center justify-center gap-2">
+                    {editState.isEditing && editState.imageId === image.id ? (
+                      <form 
+                        className="flex items-center gap-2"
+                        onSubmit={(e) => handleEditSubmit(image.id, e)}
+                      >
+                        <Input
+                          type="text"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              handleEditCancel();
+                            }
+                          }}
+                          className="w-48"
+                          autoFocus
+                        />
+                        <span className="text-muted-foreground">
+                          .{format}
+                        </span>
+                      </form>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <p className="text-center text-sm text-muted-foreground">
+                          {image.fileName}
+                        </p>
+                        <button
+                          onClick={() => handleEditStart(image.id, image.fileName)}
+                          className="p-1 hover:bg-secondary rounded-sm transition-colors"
+                          title="Rename file"
+                        >
+                          <Pencil className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex justify-center gap-2">
                     <Button 
                       onClick={() => downloadImage(image.id)}
@@ -171,4 +231,3 @@ const HeicConverter = () => {
 };
 
 export default HeicConverter;
-

@@ -11,3 +11,7 @@ export interface ConvertedImage {
   progress: number;
 }
 
+export interface EditState {
+  imageId: string | null;
+  isEditing: boolean;
+}
