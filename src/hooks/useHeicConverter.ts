@@ -1,17 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import heic2any from "heic2any";
-
-type ImageFormat = 'jpg' | 'png' | 'webp';
-
-interface ConvertedImage {
-  id: string;
-  originalFile: File;
-  previewUrl: string;
-  fileName: string;
-  exifData: null | Record<string, any>;
-  convertedBlob: Blob | null;
-}
+import { ImageFormat, ConvertedImage } from "@/types/heicConverter";
+import { isHeicOrHeif, getNewFileName } from "@/utils/heicConverterUtils";
+import { convertHeicToFormat } from "@/services/heicConversionService";
 
 export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
@@ -27,79 +19,8 @@ export const useHeicConverter = () => {
     localStorage.setItem('heic-convert-format', format);
   }, [format]);
 
-  const isHeicOrHeif = (file: File) => {
-    return file.type === 'image/heic' || 
-           file.type === 'image/heif' || 
-           file.name.toLowerCase().endsWith('.heic') || 
-           file.name.toLowerCase().endsWith('.heif');
-  };
-
-  const getNewFileName = (originalName: string, targetFormat: ImageFormat) => {
-    return originalName.replace(/\.(heic|heif)$/i, `.${targetFormat}`);
-  };
-
-  const convertPngToWebp = async (pngBlob: Blob): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(new Error('Failed to convert to WEBP'));
-            }
-          },
-          'image/webp',
-          0.9
-        );
-      };
-      img.onerror = () => reject(new Error('Failed to load PNG image'));
-      img.src = URL.createObjectURL(pngBlob);
-    });
-  };
-
-  const convertHeicToFormat = async (file: File, targetFormat: ImageFormat): Promise<{ blob: Blob, previewUrl: string }> => {
-    try {
-      let convertedBlob: Blob;
-
-      if (targetFormat === 'webp') {
-        const pngBlob = await heic2any({
-          blob: file,
-          toType: 'image/png',
-          quality: 0.95,
-        }) as Blob;
-
-        convertedBlob = await convertPngToWebp(pngBlob);
-      } else {
-        convertedBlob = await heic2any({
-          blob: file,
-          toType: `image/${targetFormat === 'jpg' ? 'jpeg' : targetFormat}`,
-          quality: 0.95,
-        }) as Blob;
-      }
-
-      const previewUrl = URL.createObjectURL(convertedBlob);
-      return { blob: convertedBlob, previewUrl };
-    } catch (error) {
-      console.error('Error converting HEIC:', error);
-      throw error;
-    }
-  };
-
   const handleFormatChange = async (newFormat: ImageFormat) => {
-    if (isConverting) return; // Prevent multiple simultaneous conversions
+    if (isConverting) return;
     
     try {
       if (images.length > 0) {
@@ -110,7 +31,6 @@ export const useHeicConverter = () => {
           description: "Please wait while we convert your images to the new format.",
         });
 
-        // Clean up existing preview URLs
         images.forEach(image => {
           URL.revokeObjectURL(image.previewUrl);
         });
@@ -144,7 +64,6 @@ export const useHeicConverter = () => {
           result => result.status === 'rejected'
         );
 
-        // Update both states together after conversion is complete
         if (successfulConversions.length > 0) {
           setImages(successfulConversions);
           setFormat(newFormat);
@@ -163,7 +82,6 @@ export const useHeicConverter = () => {
           });
         }
       } else {
-        // If no images, just update the format
         setFormat(newFormat);
       }
     } catch (error) {
@@ -199,6 +117,7 @@ export const useHeicConverter = () => {
       return;
     }
 
+    setIsConverting(true);
     const toastId = toast({
       title: "Converting images...",
       description: "Please wait while we convert your images.",
@@ -256,6 +175,8 @@ export const useHeicConverter = () => {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsConverting(false);
     }
   };
 
