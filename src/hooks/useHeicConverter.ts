@@ -42,107 +42,68 @@ export const useHeicConverter = () => {
           description: "Please wait while we convert your images to the new format.",
         });
 
-        const convertWithRetry = async (image: { id: string, originalFile: File, fileName: string }, isRetry = false) => {
-          try {
-            const { blob, previewUrl } = await convertHeicToFormat(
-              image.originalFile,
-              format,
-              (progress) => {
-                setImages(prev => prev.map(img =>
-                  img.id === image.id ? {
-                    ...img,
-                    progress,
-                    fileName: `${image.fileName}.${format}`
-                  } : img
-                ));
-              },
-              isRetry
-            );
+        const results = await Promise.allSettled(
+          currentImages.map(async (image) => {
+            try {
+              const { blob, previewUrl } = await convertHeicToFormat(
+                image.originalFile,
+                format,
+                (progress) => {
+                  setImages(prev => prev.map(img =>
+                    img.id === image.id ? {
+                      ...img,
+                      progress,
+                      fileName: `${image.fileName}.${format}`
+                    } : img
+                  ));
+                }
+              );
 
-            const oldImage = images.find(img => img.id === image.id);
-            if (oldImage?.previewUrl) {
-              URL.revokeObjectURL(oldImage.previewUrl);
+              const oldImage = images.find(img => img.id === image.id);
+              if (oldImage?.previewUrl) {
+                URL.revokeObjectURL(oldImage.previewUrl);
+              }
+
+              return {
+                id: image.id,
+                originalFile: image.originalFile,
+                previewUrl,
+                fileName: `${image.fileName}.${format}`,
+                exifData: null,
+                convertedBlob: blob,
+                progress: 100,
+              };
+            } catch (error) {
+              console.error(`Failed to convert ${image.originalFile.name}:`, error);
+              throw new Error(`Failed to convert ${image.originalFile.name}`);
             }
-
-            return {
-              id: image.id,
-              originalFile: image.originalFile,
-              previewUrl,
-              fileName: `${image.fileName}.${format}`,
-              exifData: null,
-              convertedBlob: blob,
-              progress: 100,
-            };
-          } catch (error) {
-            if ((error as Error).message === 'STUCK_RETRY_NEEDED') {
-              toast({
-                title: "Taking longer time than usual",
-                description: `Re trying to convert HEIC to ${format.toUpperCase()}`,
-                duration: 6000,
-              });
-              return await convertWithRetry(image, true);
-            }
-            throw error;
-          }
-        };
-
-        let results = await Promise.allSettled(
-          currentImages.map(image => convertWithRetry(image))
+          })
         );
-
-        let failedConversions = results.filter(
-          (result): result is PromiseRejectedResult => result.status === 'rejected'
-        );
-
-        if (failedConversions.length > 0) {
-          toast({
-            title: "Retrying failed conversions",
-            description: "Attempting to convert failed images one more time.",
-            duration: 6000,
-          });
-
-          const retryResults = await Promise.allSettled(
-            failedConversions.map((_, index) => 
-              convertWithRetry(currentImages[index], true)
-            )
-          );
-
-          const retrySuccesses = retryResults.filter(
-            (result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled'
-          );
-
-          if (retrySuccesses.length > 0) {
-            toast({
-              title: "Success",
-              description: "Failed images successfully converted",
-              duration: 6000,
-            });
-          }
-
-          const finalFailures = retryResults.filter(
-            result => result.status === 'rejected'
-          );
-
-          if (finalFailures.length > 0) {
-            toast({
-              title: "Error",
-              description: "Reload the page and try again with single image if conversion failed",
-              variant: "destructive",
-              duration: 6000,
-            });
-          }
-
-          results = [...results.filter(r => r.status === 'fulfilled'), ...retryResults];
-        }
 
         const successfulConversions = results
-          .filter((result): result is PromiseFulfilledResult<any> =>
+          .filter((result): result is PromiseFulfilledResult<ConvertedImage> =>
             result.status === 'fulfilled'
           )
           .map(result => result.value);
 
+        const failedConversions = results.filter(
+          result => result.status === 'rejected'
+        );
+
         if (successfulConversions.length > 0) {
           setImages(successfulConversions);
+          toast({
+            title: "Conversion complete",
+            description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
+          });
+        }
+
+        if (failedConversions.length > 0) {
+          toast({
+            title: "Some conversions failed",
+            description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert.`,
+            variant: "destructive",
+          });
         }
 
         setIsConverting(false);
