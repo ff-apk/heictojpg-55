@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import heic2any from "heic2any";
 
@@ -22,6 +21,10 @@ export const useHeicConverter = () => {
     return (savedFormat as ImageFormat) || 'jpg';
   });
   const { toast } = useToast();
+
+  useEffect(() => {
+    localStorage.setItem('heic-convert-format', format);
+  }, [format]);
 
   const isHeicOrHeif = (file: File) => {
     return file.type === 'image/heic' || 
@@ -71,17 +74,14 @@ export const useHeicConverter = () => {
       let convertedBlob: Blob;
 
       if (format === 'webp') {
-        // First convert to PNG
         const pngBlob = await heic2any({
           blob: file,
           toType: 'image/png',
           quality: 0.95,
         }) as Blob;
 
-        // Then convert PNG to WEBP
         convertedBlob = await convertPngToWebp(pngBlob);
       } else {
-        // Direct conversion for JPG/PNG
         convertedBlob = await heic2any({
           blob: file,
           toType: `image/${format === 'jpg' ? 'jpeg' : format}`,
@@ -94,6 +94,75 @@ export const useHeicConverter = () => {
     } catch (error) {
       console.error('Error converting HEIC:', error);
       throw error;
+    }
+  };
+
+  const handleFormatChange = async (newFormat: ImageFormat) => {
+    setFormat(newFormat);
+    
+    if (images.length > 0) {
+      const toastId = toast({
+        title: "Reconverting images...",
+        description: "Please wait while we convert your images to the new format.",
+      });
+
+      try {
+        images.forEach(image => {
+          URL.revokeObjectURL(image.previewUrl);
+        });
+
+        const results = await Promise.allSettled(
+          images.map(async (image) => {
+            try {
+              const { blob, previewUrl } = await convertHeicToFormat(image.originalFile);
+              return {
+                id: image.id,
+                originalFile: image.originalFile,
+                previewUrl,
+                fileName: getNewFileName(image.originalFile.name),
+                exifData: null,
+                convertedBlob: blob,
+              };
+            } catch (error) {
+              console.error(`Failed to reconvert ${image.originalFile.name}:`, error);
+              throw new Error(`Failed to reconvert ${image.originalFile.name}`);
+            }
+          })
+        );
+
+        const successfulConversions = results
+          .filter((result): result is PromiseFulfilledResult<ConvertedImage> => 
+            result.status === 'fulfilled'
+          )
+          .map(result => result.value);
+
+        const failedConversions = results.filter(
+          result => result.status === 'rejected'
+        );
+
+        if (successfulConversions.length > 0) {
+          setImages(successfulConversions);
+          toast({
+            title: "Reconversion complete",
+            description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${newFormat.toUpperCase()}.`,
+          });
+        }
+
+        if (failedConversions.length > 0) {
+          toast({
+            title: "Some reconversions failed",
+            description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert.`,
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Unexpected error during reconversion:', error);
+        toast({
+          title: "Unexpected error",
+          description: "An unexpected error occurred during reconversion. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -236,7 +305,7 @@ export const useHeicConverter = () => {
     images,
     isDragging,
     format,
-    setFormat,
+    setFormat: handleFormatChange,
     handleFiles,
     handleDragOver,
     handleDragEnter,

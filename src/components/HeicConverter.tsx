@@ -32,7 +32,6 @@ const HeicConverter = () => {
 
   return (
     <div className="space-y-6">
-
       <div className="space-y-4">
         <input
           type="file"
@@ -66,32 +65,32 @@ const HeicConverter = () => {
           {isDragging ? "Drop Images Here" : "Upload or Drop Images"}
         </Button>
 
-          <div className="flex justify-center space-x-4">
-            <Select 
-              value={format} 
-              onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
-            >
-              <SelectTrigger className="w-[90px] focus:ring-0 focus:outline-none">
-                <SelectValue placeholder="Select format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="jpg">JPG</SelectItem>
-                <SelectItem value="png">PNG</SelectItem>
-                <SelectItem value="webp">WEBP</SelectItem>
-              </SelectContent>
-            </Select>
-
-        {images.length > 0 && (
-          <Button 
-            onClick={reset} 
-            variant="outline" 
-            className="w-30 gap-2"
+        <div className="flex justify-center space-x-4">
+          <Select 
+            value={format} 
+            onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
           >
-            <RefreshCcw className="w-5 h-5" />
-            Reset
-          </Button>
-        )}
-            </div>
+            <SelectTrigger className="w-[90px] focus:ring-0 focus:outline-none">
+              <SelectValue placeholder="Select format" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="jpg">JPG</SelectItem>
+              <SelectItem value="png">PNG</SelectItem>
+              <SelectItem value="webp">WEBP</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {images.length > 0 && (
+            <Button 
+              onClick={reset} 
+              variant="outline" 
+              className="w-30 gap-2"
+            >
+              <RefreshCcw className="w-5 h-5" />
+              Reset
+            </Button>
+          )}
+        </div>
 
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
@@ -123,7 +122,6 @@ const HeicConverter = () => {
             {index < images.length - 1 && <Separator className="my-6" />}
           </React.Fragment>
         ))}
-
       </div>
     </div>
   );
