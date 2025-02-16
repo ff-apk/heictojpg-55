@@ -26,12 +26,18 @@ export const useHeicConverter = () => {
     
     // If there are images and we're not in the initial mount
     if (images.length > 0) {
-      // Store current file order and names
+      // Store current file order and names, without extensions
       const currentImages = images.map(img => ({
         id: img.id,
         originalFile: img.originalFile,
         fileName: img.fileName.substring(0, img.fileName.lastIndexOf('.')), // Keep base name without extension
       }));
+
+      // Immediately update all file extensions to match new format
+      setImages(prev => prev.map(img => ({
+        ...img,
+        fileName: `${img.fileName.substring(0, img.fileName.lastIndexOf('.'))}.${format}`
+      })));
 
       setIsConverting(true);
       
@@ -49,7 +55,11 @@ export const useHeicConverter = () => {
                 format,
                 (progress) => {
                   setImages(prev => prev.map(img =>
-                    img.id === image.id ? { ...img, progress } : img
+                    img.id === image.id ? {
+                      ...img,
+                      progress,
+                      fileName: `${image.fileName}.${format}` // Ensure extension matches current format during progress
+                    } : img
                   ));
                 }
               );
