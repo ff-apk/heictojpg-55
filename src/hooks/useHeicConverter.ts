@@ -5,11 +5,16 @@ import { ImageFormat, ConvertedImage } from "@/types/heicConverter";
 import { isHeicOrHeif, getNewFileName } from "@/utils/heicConverterUtils";
 import { convertHeicToFormat } from "@/services/heicConversionService";
 
+interface LightboxController {
+  toggler: boolean;
+  sourceIndex: number;
+}
+
 export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
-  const [lightboxController, setLightboxController] = useState({
+  const [lightboxController, setLightboxController] = useState<LightboxController>({
     toggler: false,
     sourceIndex: 0
   });
@@ -24,10 +29,12 @@ export const useHeicConverter = () => {
   }, [format]);
 
   const toggleLightbox = (sourceIndex: number) => {
-    setLightboxController(prev => ({
-      toggler: !prev.toggler,
-      sourceIndex
-    }));
+    if (sourceIndex >= 0 && sourceIndex < images.length) {
+      setLightboxController(prev => ({
+        toggler: !prev.toggler,
+        sourceIndex
+      }));
+    }
   };
 
   const handleFormatChange = async (newFormat: ImageFormat) => {
@@ -162,7 +169,9 @@ export const useHeicConverter = () => {
       );
 
       if (successfulConversions.length > 0) {
-        setImages(prev => [...successfulConversions, ...prev]);
+        // Append new images instead of prepending them
+        setImages(prev => [...prev, ...successfulConversions]);
+        
         toast({
           title: "Conversion complete",
           description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
@@ -250,6 +259,10 @@ export const useHeicConverter = () => {
       URL.revokeObjectURL(image.previewUrl);
     });
     setImages([]);
+    setLightboxController({
+      toggler: false,
+      sourceIndex: 0
+    });
   };
 
   return {
@@ -270,3 +283,4 @@ export const useHeicConverter = () => {
     toggleLightbox,
   };
 };
+

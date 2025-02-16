@@ -111,7 +111,7 @@ const HeicConverter = () => {
                   "transition-opacity hover:opacity-90",
                   isConverting && "opacity-50"
                 )}
-                onClick={() => toggleLightbox(index)}
+                onClick={() => !isConverting && toggleLightbox(index)}
               >
                 <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
               </div>
@@ -142,15 +142,18 @@ const HeicConverter = () => {
           </React.Fragment>
         ))}
 
-        <FsLightbox
-          toggler={lightboxController.toggler}
-          sources={images.map(img => img.previewUrl)}
-          sourceIndex={lightboxController.sourceIndex}
-          type="image"
-        />
+        {images.length > 0 && lightboxController.toggler !== undefined && (
+          <FsLightbox
+            toggler={lightboxController.toggler}
+            sources={images.map(img => img.previewUrl)}
+            sourceIndex={lightboxController.sourceIndex}
+            type="image"
+          />
+        )}
       </div>
     </div>
   );
 };
 
 export default HeicConverter;
+
