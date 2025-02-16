@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -19,8 +20,88 @@ export const useHeicConverter = () => {
   });
   const { toast } = useToast();
 
+  // Format change effect
   useEffect(() => {
     localStorage.setItem('heic-convert-format', format);
+    
+    // If there are images and we're not in the initial mount
+    if (images.length > 0) {
+      // Store current file order and names
+      const currentImages = images.map(img => ({
+        id: img.id,
+        originalFile: img.originalFile,
+        fileName: img.fileName.substring(0, img.fileName.lastIndexOf('.')), // Keep base name without extension
+      }));
+
+      setIsConverting(true);
+      
+      const processImages = async () => {
+        const results = await Promise.allSettled(
+          currentImages.map(async (image) => {
+            try {
+              const { blob, previewUrl } = await convertHeicToFormat(
+                image.originalFile,
+                format,
+                (progress) => {
+                  setImages(prev => prev.map(img =>
+                    img.id === image.id ? { ...img, progress } : img
+                  ));
+                }
+              );
+
+              // Clean up old preview URL
+              const oldImage = images.find(img => img.id === image.id);
+              if (oldImage?.previewUrl) {
+                URL.revokeObjectURL(oldImage.previewUrl);
+              }
+
+              return {
+                id: image.id,
+                originalFile: image.originalFile,
+                previewUrl,
+                fileName: `${image.fileName}.${format}`,
+                exifData: null,
+                convertedBlob: blob,
+                progress: 100,
+              };
+            } catch (error) {
+              console.error(`Failed to convert ${image.originalFile.name}:`, error);
+              throw new Error(`Failed to convert ${image.originalFile.name}`);
+            }
+          })
+        );
+
+        const successfulConversions = results
+          .filter((result): result is PromiseFulfilledResult<ConvertedImage> =>
+            result.status === 'fulfilled'
+          )
+          .map(result => result.value);
+
+        const failedConversions = results.filter(
+          result => result.status === 'rejected'
+        );
+
+        if (successfulConversions.length > 0) {
+          setImages(successfulConversions);
+          toast({
+            title: "Format changed",
+            description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
+          });
+        }
+
+        if (failedConversions.length > 0) {
+          toast({
+            title: "Some conversions failed",
+            description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert.`,
+            variant: "destructive",
+          });
+        }
+
+        setIsConverting(false);
+      };
+
+      processImages();
+    }
   }, [format]);
 
   const startEditing = (imageId: string) => {
