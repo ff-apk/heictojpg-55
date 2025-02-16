@@ -19,6 +19,31 @@ export const useHeicConverter = () => {
     localStorage.setItem('heic-convert-format', format);
   }, [format]);
 
+  const convertSingleImage = async (image: ConvertedImage) => {
+    try {
+      const { blob, previewUrl } = await convertHeicToFormat(
+        image.originalFile,
+        format,
+        (progress) => {
+          setImages(prev => prev.map(img =>
+            img.id === image.id ? { ...img, progress } : img
+          ));
+        }
+      );
+
+      setImages(prev => prev.map(img =>
+        img.id === image.id
+          ? { ...img, previewUrl, convertedBlob: blob, progress: 100 }
+          : img
+      ));
+
+      return { success: true, id: image.id };
+    } catch (error) {
+      console.error(`Failed to convert ${image.originalFile.name}:`, error);
+      return { success: false, id: image.id, error };
+    }
+  };
+
   const handleFiles = async (files: File[]) => {
     const allFiles = Array.from(files);
     const filesToProcess = allFiles.slice(0, MAX_FILES);
@@ -37,98 +62,51 @@ export const useHeicConverter = () => {
     }
 
     setIsConverting(true);
-    const toastId = toast({
-      title: "Converting images...",
-      description: "Please wait while we convert your images.",
-    });
+    
+    const newImages = validFiles.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      originalFile: file,
+      previewUrl: "",
+      fileName: getNewFileName(file.name, format),
+      exifData: null,
+      convertedBlob: null,
+      progress: 0,
+    }));
 
-    try {
-      const newImages = validFiles.map(file => ({
-        id: Math.random().toString(36).substr(2, 9),
-        originalFile: file,
-        previewUrl: "",
-        fileName: getNewFileName(file.name, format),
-        exifData: null,
-        convertedBlob: null,
-        progress: 0,
-      }));
+    setImages(prev => [...newImages, ...prev]);
 
-      setImages(prev => [...newImages, ...prev]);
+    const conversionPromises = newImages.map(image => convertSingleImage(image));
+    const results = await Promise.all(conversionPromises);
 
-      const results = await Promise.allSettled(
-        newImages.map(async (image) => {
-          try {
-            const { blob, previewUrl } = await convertHeicToFormat(
-              image.originalFile, 
-              format,
-              (progress) => {
-                setImages(prev => prev.map(img => 
-                  img.id === image.id ? { ...img, progress } : img
-                ));
-              }
-            );
-            return {
-              ...image,
-              previewUrl,
-              convertedBlob: blob,
-              progress: 100,
-            };
-          } catch (error) {
-            console.error(`Failed to convert ${image.originalFile.name}:`, error);
-            throw new Error(`Failed to convert ${image.originalFile.name}`);
-          }
-        })
-      );
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
 
-      const successfulConversions = results
-        .filter((result): result is PromiseFulfilledResult<ConvertedImage> => 
-          result.status === 'fulfilled'
-        )
-        .map(result => result.value);
-
-      const failedConversions = results.filter(
-        result => result.status === 'rejected'
-      );
-
-      setImages(prev => {
-        const nonNewImages = prev.filter(p => !newImages.find(n => n.id === p.id));
-        return [...successfulConversions, ...nonNewImages];
+    if (successCount > 0) {
+      toast({
+        title: "Conversion complete",
+        description: `Successfully converted ${successCount} image${successCount > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
       });
 
-      if (successfulConversions.length > 0) {
-        toast({
-          title: "Conversion complete",
-          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
-        });
-
-        if (excludedCount > 0) {
-          setTimeout(() => {
-            toast({
-              title: `Max upload limit is ${MAX_FILES} at a time`,
-              description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded.`,
-              duration: 7000,
-            });
-          }, 4000);
-        }
+      if (excludedCount > 0) {
+        setTimeout(() => {
+          toast({
+            title: `Max upload limit is ${MAX_FILES} at a time`,
+            description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded.`,
+            duration: 7000,
+          });
+        }, 4000);
       }
+    }
 
-      if (failedConversions.length > 0) {
-        toast({
-          title: "Some conversions failed",
-          description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert.`,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Unexpected error during conversion:', error);
+    if (failureCount > 0) {
       toast({
-        title: "Unexpected error",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Some conversions failed",
+        description: `${failureCount} image${failureCount > 1 ? 's' : ''} failed to convert.`,
         variant: "destructive",
       });
-    } finally {
-      setIsConverting(false);
     }
+
+    setIsConverting(false);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -185,7 +163,6 @@ export const useHeicConverter = () => {
     const url = URL.createObjectURL(image.convertedBlob);
     window.open(url, '_blank');
     
-    // Clean up the URL after a short delay to ensure the new tab has loaded the image
     setTimeout(() => {
       URL.revokeObjectURL(url);
     }, 1000);
