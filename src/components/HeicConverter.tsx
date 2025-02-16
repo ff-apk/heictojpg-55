@@ -29,6 +29,7 @@ const HeicConverter = () => {
     handleExifData,
     downloadImage,
     reset,
+    openImageInNewTab,
   } = useHeicConverter();
 
   return (
@@ -102,10 +103,15 @@ const HeicConverter = () => {
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
             <div className="space-y-4">
-              <div className={cn(
-                "border border-border rounded-lg overflow-hidden",
-                isConverting && "opacity-50"
-              )}>
+              <div 
+                className={cn(
+                  "border border-border rounded-lg overflow-hidden cursor-pointer",
+                  "hover:border-primary transition-colors duration-200",
+                  isConverting && "opacity-50 pointer-events-none"
+                )}
+                onClick={() => openImageInNewTab(image.id)}
+                title="Click to open in new tab"
+              >
                 <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
               </div>
               <p className="text-center text-sm text-muted-foreground">

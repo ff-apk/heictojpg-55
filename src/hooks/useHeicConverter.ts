@@ -234,6 +234,19 @@ export const useHeicConverter = () => {
     URL.revokeObjectURL(url);
   };
 
+  const openImageInNewTab = (imageId: string) => {
+    const image = images.find(img => img.id === imageId);
+    if (!image || !image.convertedBlob) return;
+
+    const url = URL.createObjectURL(image.convertedBlob);
+    window.open(url, '_blank');
+    
+    // Clean up the URL after a short delay to ensure the new tab has loaded the image
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+  };
+
   const reset = () => {
     images.forEach(image => {
       URL.revokeObjectURL(image.previewUrl);
@@ -254,6 +267,7 @@ export const useHeicConverter = () => {
     handleDrop,
     handleExifData,
     downloadImage,
+    openImageInNewTab,
     reset,
   };
 };
