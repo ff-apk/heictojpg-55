@@ -101,14 +101,7 @@ export const useHeicConverter = () => {
     const allFiles = Array.from(files);
     const filesToProcess = allFiles.slice(0, MAX_FILES);
     const excludedFiles = allFiles.slice(MAX_FILES);
-
-    if (excludedFiles.length > 0) {
-      toast({
-        title: "Max upload limit is 30 at a time",
-        description: "Other images have been excluded.",
-        duration: 7000,
-      });
-    }
+    const excludedCount = excludedFiles.length;
 
     const validFiles = filesToProcess.filter(isHeicOrHeif);
 
@@ -161,8 +154,18 @@ export const useHeicConverter = () => {
         setImages(prev => [...successfulConversions, ...prev]);
         toast({
           title: "Conversion complete",
-          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''}.`,
+          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
         });
+
+        if (excludedCount > 0) {
+          setTimeout(() => {
+            toast({
+              title: "Max upload limit is 30 at a time",
+              description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded.`,
+              duration: 7000,
+            });
+          }, 4000);
+        }
       }
 
       if (failedConversions.length > 0) {
