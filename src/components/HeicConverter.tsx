@@ -19,6 +19,7 @@ const HeicConverter = () => {
     images,
     isDragging,
     format,
+    isConverting,
     setFormat,
     handleFiles,
     handleDragOver,
@@ -60,6 +61,7 @@ const HeicConverter = () => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
+          disabled={isConverting}
         >
           <Upload className="w-6 h-6" />
           {isDragging ? "Drop Images Here" : "Upload or Drop Images"}
@@ -69,8 +71,12 @@ const HeicConverter = () => {
           <Select 
             value={format} 
             onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
+            disabled={isConverting}
           >
-            <SelectTrigger className="w-[90px] focus:ring-0 focus:outline-none">
+            <SelectTrigger className={cn(
+              "w-[90px] focus:ring-0 focus:outline-none",
+              isConverting && "opacity-50 cursor-not-allowed"
+            )}>
               <SelectValue placeholder="Select format" />
             </SelectTrigger>
             <SelectContent>
@@ -85,8 +91,9 @@ const HeicConverter = () => {
               onClick={reset} 
               variant="outline" 
               className="w-30 gap-2"
+              disabled={isConverting}
             >
-              <RefreshCcw className="w-5 h-5" />
+              <RefreshCcw className={cn("w-5 h-5", isConverting && "animate-spin")} />
               Reset
             </Button>
           )}
@@ -95,7 +102,10 @@ const HeicConverter = () => {
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
             <div className="space-y-4">
-              <div className="border border-border rounded-lg overflow-hidden">
+              <div className={cn(
+                "border border-border rounded-lg overflow-hidden",
+                isConverting && "opacity-50"
+              )}>
                 <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
               </div>
               <p className="text-center text-sm text-muted-foreground">
@@ -105,6 +115,7 @@ const HeicConverter = () => {
                 <Button 
                   onClick={() => downloadImage(image.id)}
                   className="gap-2"
+                  disabled={isConverting}
                 >
                   <Download className="w-5 h-5" />
                   Download
@@ -113,6 +124,7 @@ const HeicConverter = () => {
                   onClick={() => handleExifData(image.id)}
                   variant="outline"
                   className="gap-2"
+                  disabled={isConverting}
                 >
                   <Info className="w-5 h-5" />
                   Exif Data

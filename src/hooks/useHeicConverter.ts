@@ -16,6 +16,7 @@ interface ConvertedImage {
 export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const [format, setFormat] = useState<ImageFormat>(() => {
     const savedFormat = localStorage.getItem('heic-convert-format');
     return (savedFormat as ImageFormat) || 'jpg';
@@ -33,8 +34,8 @@ export const useHeicConverter = () => {
            file.name.toLowerCase().endsWith('.heif');
   };
 
-  const getNewFileName = (originalName: string) => {
-    return originalName.replace(/\.(heic|heif)$/i, `.${format}`);
+  const getNewFileName = (originalName: string, targetFormat: ImageFormat) => {
+    return originalName.replace(/\.(heic|heif)$/i, `.${targetFormat}`);
   };
 
   const convertPngToWebp = async (pngBlob: Blob): Promise<Blob> => {
@@ -69,11 +70,11 @@ export const useHeicConverter = () => {
     });
   };
 
-  const convertHeicToFormat = async (file: File): Promise<{ blob: Blob, previewUrl: string }> => {
+  const convertHeicToFormat = async (file: File, targetFormat: ImageFormat): Promise<{ blob: Blob, previewUrl: string }> => {
     try {
       let convertedBlob: Blob;
 
-      if (format === 'webp') {
+      if (targetFormat === 'webp') {
         const pngBlob = await heic2any({
           blob: file,
           toType: 'image/png',
@@ -84,7 +85,7 @@ export const useHeicConverter = () => {
       } else {
         convertedBlob = await heic2any({
           blob: file,
-          toType: `image/${format === 'jpg' ? 'jpeg' : format}`,
+          toType: `image/${targetFormat === 'jpg' ? 'jpeg' : targetFormat}`,
           quality: 0.95,
         }) as Blob;
       }
@@ -98,15 +99,18 @@ export const useHeicConverter = () => {
   };
 
   const handleFormatChange = async (newFormat: ImageFormat) => {
-    setFormat(newFormat);
+    if (isConverting) return; // Prevent multiple simultaneous conversions
     
-    if (images.length > 0) {
-      const toastId = toast({
-        title: "Reconverting images...",
-        description: "Please wait while we convert your images to the new format.",
-      });
+    try {
+      if (images.length > 0) {
+        setIsConverting(true);
+        
+        const toastId = toast({
+          title: "Converting images...",
+          description: "Please wait while we convert your images to the new format.",
+        });
 
-      try {
+        // Clean up existing preview URLs
         images.forEach(image => {
           URL.revokeObjectURL(image.previewUrl);
         });
@@ -114,12 +118,12 @@ export const useHeicConverter = () => {
         const results = await Promise.allSettled(
           images.map(async (image) => {
             try {
-              const { blob, previewUrl } = await convertHeicToFormat(image.originalFile);
+              const { blob, previewUrl } = await convertHeicToFormat(image.originalFile, newFormat);
               return {
                 id: image.id,
                 originalFile: image.originalFile,
                 previewUrl,
-                fileName: getNewFileName(image.originalFile.name),
+                fileName: getNewFileName(image.originalFile.name, newFormat),
                 exifData: null,
                 convertedBlob: blob,
               };
@@ -140,29 +144,37 @@ export const useHeicConverter = () => {
           result => result.status === 'rejected'
         );
 
+        // Update both states together after conversion is complete
         if (successfulConversions.length > 0) {
           setImages(successfulConversions);
+          setFormat(newFormat);
+          
           toast({
-            title: "Reconversion complete",
+            title: "Conversion complete",
             description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${newFormat.toUpperCase()}.`,
           });
         }
 
         if (failedConversions.length > 0) {
           toast({
-            title: "Some reconversions failed",
+            title: "Some conversions failed",
             description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert.`,
             variant: "destructive",
           });
         }
-      } catch (error) {
-        console.error('Unexpected error during reconversion:', error);
-        toast({
-          title: "Unexpected error",
-          description: "An unexpected error occurred during reconversion. Please try again.",
-          variant: "destructive",
-        });
+      } else {
+        // If no images, just update the format
+        setFormat(newFormat);
       }
+    } catch (error) {
+      console.error('Unexpected error during conversion:', error);
+      toast({
+        title: "Unexpected error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -196,12 +208,12 @@ export const useHeicConverter = () => {
       const results = await Promise.allSettled(
         validFiles.map(async (file) => {
           try {
-            const { blob, previewUrl } = await convertHeicToFormat(file);
+            const { blob, previewUrl } = await convertHeicToFormat(file, format);
             return {
               id: Math.random().toString(36).substr(2, 9),
               originalFile: file,
               previewUrl,
-              fileName: getNewFileName(file.name),
+              fileName: getNewFileName(file.name, format),
               exifData: null,
               convertedBlob: blob,
             };
@@ -305,6 +317,7 @@ export const useHeicConverter = () => {
     images,
     isDragging,
     format,
+    isConverting,
     setFormat: handleFormatChange,
     handleFiles,
     handleDragOver,
