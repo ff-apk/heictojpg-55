@@ -5,6 +5,7 @@ import { Upload, Download, Info, RefreshCcw } from "lucide-react";
 import { useHeicConverter } from "@/hooks/useHeicConverter";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { MAX_FILES } from "@/constants/upload";
 import {
   Select,
   SelectContent,
@@ -64,8 +65,13 @@ const HeicConverter = () => {
           onClick={() => fileInputRef.current?.click()}
           disabled={isConverting}
         >
-          <Upload className="w-6 h-6" />
-          {isDragging ? "Drop Images Here" : "Upload or Drop Images"}
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-3">
+              <Upload className="w-6 h-6" />
+              <span>{isDragging ? "Drop Images Here" : "Upload or Drop Images"}</span>
+            </div>
+            <span className="text-sm text-muted-foreground">Max {MAX_FILES} images at once</span>
+          </div>
         </Button>
 
         <div className="flex justify-center space-x-4">

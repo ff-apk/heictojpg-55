@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage } from "@/types/heicConverter";
 import { isHeicOrHeif, getNewFileName } from "@/utils/heicConverterUtils";
 import { convertHeicToFormat } from "@/services/heicConversionService";
+import { MAX_FILES } from "@/constants/upload";
 
 export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
@@ -97,7 +97,6 @@ export const useHeicConverter = () => {
   };
 
   const handleFiles = async (files: File[]) => {
-    const MAX_FILES = 30;
     const allFiles = Array.from(files);
     const filesToProcess = allFiles.slice(0, MAX_FILES);
     const excludedFiles = allFiles.slice(MAX_FILES);
@@ -160,7 +159,7 @@ export const useHeicConverter = () => {
         if (excludedCount > 0) {
           setTimeout(() => {
             toast({
-              title: "Max upload limit is 30 at a time",
+              title: `Max upload limit is ${MAX_FILES} at a time`,
               description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded.`,
               duration: 7000,
             });
