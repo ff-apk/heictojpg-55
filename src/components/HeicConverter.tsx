@@ -1,5 +1,5 @@
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw } from "lucide-react";
 import { useHeicConverter } from "@/hooks/useHeicConverter";
@@ -17,6 +17,7 @@ import {
 
 const HeicConverter = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isFormatSelectOpen, setIsFormatSelectOpen] = useState(false);
   const {
     images,
     isDragging,
@@ -76,23 +77,29 @@ const HeicConverter = () => {
         </Button>
 
         <div className="flex justify-center space-x-4">
-          <Select 
-            value={format} 
-            onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
-            disabled={isConverting}
-          >
-            <SelectTrigger className={cn(
-              "w-[90px] focus:ring-0 focus:outline-none",
-              isConverting && "opacity-50 cursor-not-allowed"
-            )}>
-              <SelectValue placeholder="Select format" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="jpg">JPG</SelectItem>
-              <SelectItem value="png">PNG</SelectItem>
-              <SelectItem value="webp">WEBP</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className={`flex justify-center transition-all duration-500 ${
+            isFormatSelectOpen ? "mb-32" : "mb-0"
+          }`}>
+            <Select 
+              value={format} 
+              onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
+              disabled={isConverting}
+              open={isFormatSelectOpen}
+              onOpenChange={setIsFormatSelectOpen}
+            >
+              <SelectTrigger className={cn(
+                "w-[90px] focus:ring-0 focus:outline-none",
+                isConverting && "opacity-50 cursor-not-allowed"
+              )}>
+                <SelectValue placeholder="Select format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="jpg">JPG</SelectItem>
+                <SelectItem value="png">PNG</SelectItem>
+                <SelectItem value="webp">WEBP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {images.length > 0 && (
             <Button 
@@ -110,50 +117,39 @@ const HeicConverter = () => {
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
             <div className="space-y-4">
-              {image.progress < 100 ? (
-                <div className="relative p-4 border border-border rounded-lg">
-                  <Progress value={image.progress} className="h-6" />
-                  <span className="absolute inset-0 flex items-center justify-center text-sm">
-                    {image.fileName} - {Math.round(image.progress)}%
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <div 
-                    className={cn(
-                      "border border-border rounded-lg overflow-hidden cursor-pointer",
-                      "hover:border-primary transition-colors duration-200",
-                      isConverting && "opacity-50 pointer-events-none"
-                    )}
-                    onClick={() => openImageInNewTab(image.id)}
-                    title="Click to open in new tab"
-                  >
-                    <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
-                  </div>
-                  <p className="text-center text-sm text-muted-foreground">
-                    {image.fileName}
-                  </p>
-                  <div className="flex justify-center gap-2">
-                    <Button 
-                      onClick={() => downloadImage(image.id)}
-                      className="gap-2"
-                      disabled={isConverting}
-                    >
-                      <Download className="w-5 h-5" />
-                      Download
-                    </Button>
-                    <Button 
-                      onClick={() => handleExifData(image.id)}
-                      variant="outline"
-                      className="gap-2"
-                      disabled={isConverting}
-                    >
-                      <Info className="w-5 h-5" />
-                      Exif Data
-                    </Button>
-                  </div>
-                </>
-              )}
+              <div 
+                className={cn(
+                  "border border-border rounded-lg overflow-hidden cursor-pointer",
+                  "hover:border-primary transition-colors duration-200",
+                  isConverting && "opacity-50 pointer-events-none"
+                )}
+                onClick={() => openImageInNewTab(image.id)}
+                title="Click to open in new tab"
+              >
+                <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
+              </div>
+              <p className="text-center text-sm text-muted-foreground">
+                {image.fileName}
+              </p>
+              <div className="flex justify-center gap-2">
+                <Button 
+                  onClick={() => downloadImage(image.id)}
+                  className="gap-2"
+                  disabled={isConverting}
+                >
+                  <Download className="w-5 h-5" />
+                  Download
+                </Button>
+                <Button 
+                  onClick={() => handleExifData(image.id)}
+                  variant="outline"
+                  className="gap-2"
+                  disabled={isConverting}
+                >
+                  <Info className="w-5 h-5" />
+                  Exif Data
+                </Button>
+              </div>
             </div>
             {index < images.length - 1 && <Separator className="my-6" />}
           </React.Fragment>
