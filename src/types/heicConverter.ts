@@ -8,4 +8,6 @@ export interface ConvertedImage {
   fileName: string;
   exifData: null | Record<string, any>;
   convertedBlob: Blob | null;
+  progress: number;
 }
+
