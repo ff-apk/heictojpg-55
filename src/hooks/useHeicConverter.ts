@@ -9,6 +9,10 @@ export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [lightboxController, setLightboxController] = useState({
+    toggler: false,
+    sourceIndex: 0
+  });
   const [format, setFormat] = useState<ImageFormat>(() => {
     const savedFormat = localStorage.getItem('heic-convert-format');
     return (savedFormat as ImageFormat) || 'jpg';
@@ -18,6 +22,13 @@ export const useHeicConverter = () => {
   useEffect(() => {
     localStorage.setItem('heic-convert-format', format);
   }, [format]);
+
+  const toggleLightbox = (sourceIndex: number) => {
+    setLightboxController(prev => ({
+      toggler: !prev.toggler,
+      sourceIndex
+    }));
+  };
 
   const handleFormatChange = async (newFormat: ImageFormat) => {
     if (isConverting) return;
@@ -246,6 +257,7 @@ export const useHeicConverter = () => {
     isDragging,
     format,
     isConverting,
+    lightboxController,
     setFormat: handleFormatChange,
     handleFiles,
     handleDragOver,
@@ -255,5 +267,6 @@ export const useHeicConverter = () => {
     handleExifData,
     downloadImage,
     reset,
+    toggleLightbox,
   };
 };

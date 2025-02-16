@@ -5,6 +5,7 @@ import { Upload, Download, Info, RefreshCcw } from "lucide-react";
 import { useHeicConverter } from "@/hooks/useHeicConverter";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import FsLightbox from "fslightbox-react";
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ const HeicConverter = () => {
     isDragging,
     format,
     isConverting,
+    lightboxController,
     setFormat,
     handleFiles,
     handleDragOver,
@@ -29,6 +31,7 @@ const HeicConverter = () => {
     handleExifData,
     downloadImage,
     reset,
+    toggleLightbox,
   } = useHeicConverter();
 
   return (
@@ -102,10 +105,14 @@ const HeicConverter = () => {
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
             <div className="space-y-4">
-              <div className={cn(
-                "border border-border rounded-lg overflow-hidden",
-                isConverting && "opacity-50"
-              )}>
+              <div 
+                className={cn(
+                  "border border-border rounded-lg overflow-hidden cursor-pointer",
+                  "transition-opacity hover:opacity-90",
+                  isConverting && "opacity-50"
+                )}
+                onClick={() => toggleLightbox(index)}
+              >
                 <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
               </div>
               <p className="text-center text-sm text-muted-foreground">
@@ -134,6 +141,13 @@ const HeicConverter = () => {
             {index < images.length - 1 && <Separator className="my-6" />}
           </React.Fragment>
         ))}
+
+        <FsLightbox
+          toggler={lightboxController.toggler}
+          sources={images.map(img => img.previewUrl)}
+          sourceIndex={lightboxController.sourceIndex}
+          type="image"
+        />
       </div>
     </div>
   );
