@@ -11,45 +11,32 @@ export const convertHeicToFormat = async (
   try {
     let convertedBlob: Blob;
 
-    const simulateProgress = (start: number, end: number, duration: number) => {
-      const step = 100;
-      const increment = (end - start) / step;
-      const stepDuration = duration / step;
-      
-      let currentProgress = start;
-      const interval = setInterval(() => {
-        currentProgress += increment;
-        if (currentProgress >= end) {
-          clearInterval(interval);
-          onProgress?.(end);
-        } else {
-          onProgress?.(currentProgress);
-        }
-      }, stepDuration);
-
-      return interval;
-    };
-
-    const progressInterval = simulateProgress(0, 90, 2000);
-
     if (targetFormat === 'webp') {
+      // First convert to PNG with progress tracking
       const pngBlob = await heic2any({
         blob: file,
         toType: 'image/png',
         quality: 0.95,
+        onProgress: (progress) => {
+          // Scale progress to 0-90% for PNG conversion
+          onProgress?.(progress * 0.9);
+        }
       }) as Blob;
 
+      // Then convert PNG to WebP (remaining 10% of progress)
+      onProgress?.(90);
       convertedBlob = await convertPngToWebp(pngBlob);
+      onProgress?.(100);
     } else {
       convertedBlob = await heic2any({
         blob: file,
         toType: `image/${targetFormat === 'jpg' ? 'jpeg' : targetFormat}`,
         quality: 0.95,
+        onProgress: (progress) => {
+          onProgress?.(progress);
+        }
       }) as Blob;
     }
-
-    clearInterval(progressInterval);
-    onProgress?.(100);
 
     const previewUrl = URL.createObjectURL(convertedBlob);
     return { blob: convertedBlob, previewUrl };
@@ -58,4 +45,3 @@ export const convertHeicToFormat = async (
     throw error;
   }
 };
-
