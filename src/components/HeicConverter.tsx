@@ -117,39 +117,50 @@ const HeicConverter = () => {
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
             <div className="space-y-4">
-              <div 
-                className={cn(
-                  "border border-border rounded-lg overflow-hidden cursor-pointer",
-                  "hover:border-primary transition-colors duration-200",
-                  isConverting && "opacity-50 pointer-events-none"
-                )}
-                onClick={() => openImageInNewTab(image.id)}
-                title="Click to open in new tab"
-              >
-                <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
-              </div>
-              <p className="text-center text-sm text-muted-foreground">
-                {image.fileName}
-              </p>
-              <div className="flex justify-center gap-2">
-                <Button 
-                  onClick={() => downloadImage(image.id)}
-                  className="gap-2"
-                  disabled={isConverting}
-                >
-                  <Download className="w-5 h-5" />
-                  Download
-                </Button>
-                <Button 
-                  onClick={() => handleExifData(image.id)}
-                  variant="outline"
-                  className="gap-2"
-                  disabled={isConverting}
-                >
-                  <Info className="w-5 h-5" />
-                  Exif Data
-                </Button>
-              </div>
+              {image.progress < 100 ? (
+                <div className="relative p-4 border border-border rounded-lg">
+                  <Progress value={image.progress} className="h-6" />
+                  <span className="absolute inset-0 flex items-center justify-center text-sm">
+                    {image.fileName} - {Math.round(image.progress)}%
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div 
+                    className={cn(
+                      "border border-border rounded-lg overflow-hidden cursor-pointer",
+                      "hover:border-primary transition-colors duration-200",
+                      isConverting && "opacity-50 pointer-events-none"
+                    )}
+                    onClick={() => openImageInNewTab(image.id)}
+                    title="Click to open in new tab"
+                  >
+                    <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
+                  </div>
+                  <p className="text-center text-sm text-muted-foreground">
+                    {image.fileName}
+                  </p>
+                  <div className="flex justify-center gap-2">
+                    <Button 
+                      onClick={() => downloadImage(image.id)}
+                      className="gap-2"
+                      disabled={isConverting}
+                    >
+                      <Download className="w-5 h-5" />
+                      Download
+                    </Button>
+                    <Button 
+                      onClick={() => handleExifData(image.id)}
+                      variant="outline"
+                      className="gap-2"
+                      disabled={isConverting}
+                    >
+                      <Info className="w-5 h-5" />
+                      Exif Data
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
             {index < images.length - 1 && <Separator className="my-6" />}
           </React.Fragment>
