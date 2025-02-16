@@ -36,6 +36,11 @@ export const useHeicConverter = () => {
       setIsConverting(true);
       
       const processImages = async () => {
+        const toastId = toast({
+          title: "Converting images...",
+          description: "Please wait while we convert your images to the new format.",
+        });
+
         const results = await Promise.allSettled(
           currentImages.map(async (image) => {
             try {
@@ -84,7 +89,7 @@ export const useHeicConverter = () => {
         if (successfulConversions.length > 0) {
           setImages(successfulConversions);
           toast({
-            title: "Format changed",
+            title: "Conversion complete",
             description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
           });
         }
