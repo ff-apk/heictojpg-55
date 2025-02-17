@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -30,9 +31,9 @@ export const useHeicConverter = () => {
     return (savedFormat as ImageFormat) || 'jpg';
   });
   const [qualities, setQualities] = useState<Qualities>(() => ({
-    jpg: parseFloat(localStorage.getItem('heic-convert-quality-jpg') || '1'),
+    jpg: parseFloat(localStorage.getItem('heic-convert-quality-jpg') || '0.9'),
     png: 0.95,
-    webp: parseFloat(localStorage.getItem('heic-convert-quality-webp') || '1'),
+    webp: parseFloat(localStorage.getItem('heic-convert-quality-webp') || '0.9'),
   }));
   
   const { toast } = useToast();
@@ -435,3 +436,4 @@ export const useHeicConverter = () => {
     handleRename,
   };
 };
+
