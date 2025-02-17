@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -63,7 +62,7 @@ export const useHeicConverter = () => {
       const results = await Promise.allSettled(
         currentImages.map(async (image) => {
           try {
-            const { blob, previewUrl } = await convertHeicToFormat(
+            const { blob, previewUrl, actualMimeType } = await convertHeicToFormat(
               image.originalFile,
               format,
               currentQuality,
@@ -81,6 +80,20 @@ export const useHeicConverter = () => {
             const oldImage = images.find(img => img.id === image.id);
             if (oldImage?.previewUrl) {
               URL.revokeObjectURL(oldImage.previewUrl);
+            }
+
+            // If actualMimeType exists, it means this was not a HEIC file
+            if (actualMimeType) {
+              const extension = actualMimeType.split('/')[1];
+              return {
+                id: image.id,
+                originalFile: image.originalFile,
+                previewUrl,
+                fileName: `${image.originalFile.name.split('.')[0]}.${extension}`,
+                exifData: null,
+                convertedBlob: blob,
+                progress: 100,
+              };
             }
 
             return {
@@ -181,8 +194,9 @@ export const useHeicConverter = () => {
     const validationPromises = filesToProcess.map(isHeicOrHeif);
     const validationResults = await Promise.all(validationPromises);
     const validFiles = filesToProcess.filter((_, index) => validationResults[index]);
+    const invalidFiles = filesToProcess.filter((_, index) => !validationResults[index]);
 
-    if (validFiles.length === 0) {
+    if (validFiles.length === 0 && invalidFiles.length > 0) {
       toast({
         title: "Invalid files",
         description: "Please select HEIC or HEIF images only",
@@ -213,7 +227,7 @@ export const useHeicConverter = () => {
       const results = await Promise.allSettled(
         newImages.map(async (image) => {
           try {
-            const { blob, previewUrl } = await convertHeicToFormat(
+            const { blob, previewUrl, actualMimeType } = await convertHeicToFormat(
               image.originalFile, 
               format,
               qualities[format],
@@ -223,6 +237,19 @@ export const useHeicConverter = () => {
                 ));
               }
             );
+
+            // If actualMimeType exists, it means this was not a HEIC file
+            if (actualMimeType) {
+              const extension = actualMimeType.split('/')[1];
+              return {
+                ...image,
+                previewUrl,
+                convertedBlob: blob,
+                fileName: `${image.originalFile.name.split('.')[0]}.${extension}`,
+                progress: 100,
+              };
+            }
+
             return {
               ...image,
               previewUrl,
@@ -269,11 +296,13 @@ export const useHeicConverter = () => {
       }
 
       if (failedConversions.length > 0) {
-        toast({
-          title: "Some conversions failed",
-          description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert`,
-          variant: "destructive",
-        });
+        setTimeout(() => {
+          toast({
+            title: "Some conversions failed",
+            description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert`,
+            variant: "destructive",
+          });
+        }, successfulConversions.length > 0 ? 4000 : 0);
       }
     } catch (error) {
       console.error('Unexpected error during conversion:', error);
@@ -436,4 +465,3 @@ export const useHeicConverter = () => {
     handleRename,
   };
 };
-

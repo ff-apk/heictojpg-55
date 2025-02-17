@@ -1,9 +1,27 @@
 
 import { isHeic } from "heic-to";
 import { ImageFormat } from "@/types/heicConverter";
+import { fileTypeFromBlob } from 'file-type';
 
 export const isHeicOrHeif = async (file: File): Promise<boolean> => {
-  return await isHeic(file);
+  try {
+    // First try using heic-to library
+    return await isHeic(file);
+  } catch (error) {
+    // If heic-to fails, use file-type as fallback
+    const type = await fileTypeFromBlob(file);
+    return type?.mime === 'image/heic' || type?.mime === 'image/heif';
+  }
+};
+
+export const getActualFileType = async (file: File): Promise<string | null> => {
+  try {
+    const type = await fileTypeFromBlob(file);
+    return type?.mime || null;
+  } catch (error) {
+    console.error('Error detecting file type:', error);
+    return null;
+  }
 };
 
 export const getNewFileName = (originalName: string, targetFormat: ImageFormat) => {
@@ -41,3 +59,10 @@ export const convertPngToWebp = async (pngBlob: Blob, quality: number = 1): Prom
     img.src = URL.createObjectURL(pngBlob);
   });
 };
+
+export const convertNonHeicFile = async (file: File, actualMimeType: string): Promise<{ blob: Blob, previewUrl: string }> => {
+  // For non-HEIC files, we'll just return them as-is with their actual type
+  const previewUrl = URL.createObjectURL(file);
+  return { blob: file, previewUrl };
+};
+
