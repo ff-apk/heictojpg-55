@@ -99,6 +99,14 @@ const HeicConverter = () => {
     setQuality(newQuality);
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -150,7 +158,7 @@ const HeicConverter = () => {
                   value={qualityInput}
                   onChange={handleQualityInputChange}
                   onBlur={handleQualityInputBlur}
-                  className="w-20 bg-gray-100 dark:bg-gray-900"
+                  className="w-20 bg-gray-100 dark:bg-gray-800"
                   maxLength={4}
                   disabled={isConverting}
                 />
@@ -234,42 +242,49 @@ const HeicConverter = () => {
                     <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
                   </div>
                   
-                  <div className="flex items-center justify-center gap-2">
-                    {editState.isEditing && editState.imageId === image.id ? (
-                      <form 
-                        className="flex items-center gap-2"
-                        onSubmit={(e) => handleEditSubmit(image.id, e)}
-                      >
-                        <Input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onBlur={() => handleEditSubmit(image.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                              handleEditCancel();
-                            }
-                          }}
-                          className="w-48"
-                          autoFocus
-                        />
-                        <span className="text-muted-foreground">
-                          .{format}
-                        </span>
-                      </form>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <p className="text-center text-sm text-muted-foreground">
-                          {image.fileName}
-                        </p>
-                        <button
-                          onClick={() => handleEditStart(image.id, image.fileName)}
-                          className="p-1 hover:bg-secondary rounded-sm transition-colors"
-                          title="Rename file"
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      {editState.isEditing && editState.imageId === image.id ? (
+                        <form 
+                          className="flex items-center gap-2"
+                          onSubmit={(e) => handleEditSubmit(image.id, e)}
                         >
-                          <Pencil className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      </div>
+                          <Input
+                            type="text"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onBlur={() => handleEditSubmit(image.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') {
+                                handleEditCancel();
+                              }
+                            }}
+                            className="w-48"
+                            autoFocus
+                          />
+                          <span className="text-muted-foreground">
+                            .{format}
+                          </span>
+                        </form>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="text-center text-sm text-muted-foreground">
+                            {image.fileName}
+                          </p>
+                          <button
+                            onClick={() => handleEditStart(image.id, image.fileName)}
+                            className="p-1 hover:bg-secondary rounded-sm transition-colors"
+                            title="Rename file"
+                          >
+                            <Pencil className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {image.convertedBlob && (
+                      <p className="text-sm text-muted-foreground">
+                        {formatFileSize(image.convertedBlob.size)}
+                      </p>
                     )}
                   </div>
 
