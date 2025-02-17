@@ -47,7 +47,7 @@ export const convertHeicToFormat = async (
       convertedBlob = await heicTo({
         blob: file,
         type: targetFormat === 'jpg' ? 'image/jpeg' : 'image/png',
-        quality: targetFormat === 'jpg' ? 0.95 : 1
+        quality: 1
       });
     }
 
