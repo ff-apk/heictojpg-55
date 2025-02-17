@@ -6,6 +6,7 @@ import { convertPngToWebp } from "@/utils/heicConverterUtils";
 export const convertHeicToFormat = async (
   file: File, 
   targetFormat: ImageFormat,
+  quality: number = 1,
   onProgress?: (progress: number) => void
 ): Promise<{ blob: Blob, previewUrl: string }> => {
   try {
@@ -40,14 +41,14 @@ export const convertHeicToFormat = async (
         quality: 1
       });
 
-      // Then convert PNG to WebP using existing utility
-      convertedBlob = await convertPngToWebp(pngBlob);
+      // Then convert PNG to WebP using existing utility with the specified quality
+      convertedBlob = await convertPngToWebp(pngBlob, quality);
     } else {
       // Direct conversion to JPG or PNG
       convertedBlob = await heicTo({
         blob: file,
         type: targetFormat === 'jpg' ? 'image/jpeg' : 'image/png',
-        quality: 1
+        quality: quality
       });
     }
 

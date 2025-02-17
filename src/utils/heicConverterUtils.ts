@@ -10,7 +10,7 @@ export const getNewFileName = (originalName: string, targetFormat: ImageFormat) 
   return originalName.replace(/\.(heic|heif)$/i, `.${targetFormat}`);
 };
 
-export const convertPngToWebp = async (pngBlob: Blob): Promise<Blob> => {
+export const convertPngToWebp = async (pngBlob: Blob, quality: number = 1): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -34,7 +34,7 @@ export const convertPngToWebp = async (pngBlob: Blob): Promise<Blob> => {
           }
         },
         'image/webp',
-        1
+        quality
       );
     };
     img.onerror = () => reject(new Error('Failed to load PNG image'));

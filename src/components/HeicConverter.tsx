@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { MAX_FILES } from "@/constants/upload";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -25,7 +26,9 @@ const HeicConverter = () => {
     format,
     isConverting,
     editState,
+    quality,
     setFormat,
+    setQuality,
     handleFiles,
     handleDragOver,
     handleDragEnter,
@@ -41,6 +44,7 @@ const HeicConverter = () => {
   } = useHeicConverter();
 
   const [editingName, setEditingName] = useState("");
+  const [qualityInput, setQualityInput] = useState(quality.toString());
 
   const handleEditStart = (imageId: string, currentName: string) => {
     const baseName = currentName.substring(0, currentName.lastIndexOf('.'));
@@ -59,6 +63,24 @@ const HeicConverter = () => {
   const handleEditCancel = () => {
     setEditingName("");
     cancelEditing();
+  };
+
+  const handleQualityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    // Allow only numbers and one decimal point
+    if (value.match(/^\d*\.?\d{0,2}$/) && parseFloat(value) <= 1) {
+      setQualityInput(value);
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue) && numValue >= 0 && numValue <= 1) {
+        setQuality(numValue);
+      }
+    }
+  };
+
+  const handleSliderChange = (value: number[]) => {
+    const newQuality = value[0];
+    setQualityInput(newQuality.toString());
+    setQuality(newQuality);
   };
 
   return (
@@ -102,41 +124,69 @@ const HeicConverter = () => {
           </div>
         </Button>
 
-        <div className="flex justify-center space-x-4">
-          <div className={`flex justify-center transition-all duration-500 ${
-            isFormatSelectOpen ? "mb-32" : "mb-0"
-          }`}>
-            <Select 
-              value={format} 
-              onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium">Quality:</label>
+              <Input
+                type="text"
+                value={qualityInput}
+                onChange={handleQualityInputChange}
+                className="w-20"
+                maxLength={4}
+                disabled={isConverting}
+              />
+            </div>
+            <Slider
+              defaultValue={[1]}
+              max={1}
+              min={0}
+              step={0.01}
+              value={[parseFloat(qualityInput) || 0]}
+              onValueChange={handleSliderChange}
               disabled={isConverting}
-              open={isFormatSelectOpen}
-              onOpenChange={setIsFormatSelectOpen}
-            >
-              <SelectTrigger className={cn(
-                "w-[90px] focus:ring-0 focus:outline-none",
-                isConverting && "opacity-50 cursor-not-allowed"
-              )}>
-                <SelectValue placeholder="Select format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="jpg">JPG</SelectItem>
-                <SelectItem value="png">PNG</SelectItem>
-                <SelectItem value="webp">WEBP</SelectItem>
-              </SelectContent>
-            </Select>
+              className="my-4"
+            />
+          </div>
+
+          <div className="flex justify-center space-x-4">
+            <div className={`flex justify-center transition-all duration-500 ${
+              isFormatSelectOpen ? "mb-32" : "mb-0"
+            }`}>
+              <Select 
+                value={format} 
+                onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
+                disabled={isConverting}
+                open={isFormatSelectOpen}
+                onOpenChange={setIsFormatSelectOpen}
+              >
+                <SelectTrigger className={cn(
+                  "w-[90px] focus:ring-0 focus:outline-none",
+                  isConverting && "opacity-50 cursor-not-allowed"
+                )}>
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="jpg">JPG</SelectItem>
+                  <SelectItem value="png">PNG</SelectItem>
+                  <SelectItem value="webp">WEBP</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {images.length > 0 && (
-            <Button 
-              onClick={reset} 
-              variant="outline" 
-              className="w-30 gap-2"
-              disabled={isConverting}
-            >
-              <RefreshCcw className={cn("w-5 h-5", isConverting && "animate-spin")} />
-              Reset
-            </Button>
+            <div className="flex justify-center">
+              <Button 
+                onClick={reset} 
+                variant="outline" 
+                className="w-30 gap-2"
+                disabled={isConverting}
+              >
+                <RefreshCcw className={cn("w-5 h-5", isConverting && "animate-spin")} />
+                Reset
+              </Button>
+            </div>
           )}
         </div>
 
@@ -234,4 +284,3 @@ const HeicConverter = () => {
 };
 
 export default HeicConverter;
-
