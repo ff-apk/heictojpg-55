@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw, Pencil } from "lucide-react";
@@ -70,13 +71,23 @@ const HeicConverter = () => {
 
   const handleQualityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
-    if (value.match(/^\d*\.?\d{0,2}$/) && parseFloat(value) <= 1) {
+    // Allow more flexible input during typing
+    if (value === '' || value === '.' || value.match(/^\d*\.?\d{0,2}$/)) {
       setQualityInput(value);
-      const numValue = parseFloat(value);
-      if (!isNaN(numValue) && numValue >= 0 && numValue <= 1) {
-        setQuality(numValue);
-      }
     }
+  };
+
+  const handleQualityInputBlur = () => {
+    let numValue = parseFloat(qualityInput);
+    if (isNaN(numValue) || numValue < 0) {
+      numValue = 0;
+    } else if (numValue > 1) {
+      numValue = 1;
+    }
+    // Round to 2 decimal places
+    numValue = Math.round(numValue * 100) / 100;
+    setQualityInput(numValue.toString());
+    setQuality(numValue);
   };
 
   const handleSliderChange = (value: number[]) => {
@@ -135,6 +146,7 @@ const HeicConverter = () => {
                   type="text"
                   value={qualityInput}
                   onChange={handleQualityInputChange}
+                  onBlur={handleQualityInputBlur}
                   className="w-20"
                   maxLength={4}
                   disabled={isConverting}
