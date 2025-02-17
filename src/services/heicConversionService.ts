@@ -1,7 +1,19 @@
 
-import heic2any from "heic2any";
+import convert from 'heic-convert';
 import { ImageFormat } from "@/types/heicConverter";
-import { convertPngToWebp } from "@/utils/heicConverterUtils";
+import { fileToBuffer, bufferToBlob } from "@/utils/bufferUtils";
+
+const getTargetFormat = (format: ImageFormat): 'JPEG' | 'PNG' => {
+  switch (format) {
+    case 'jpg':
+      return 'JPEG';
+    case 'png':
+    case 'webp':
+      return 'PNG';
+    default:
+      return 'JPEG';
+  }
+};
 
 export const convertHeicToFormat = async (
   file: File, 
@@ -9,7 +21,8 @@ export const convertHeicToFormat = async (
   onProgress?: (progress: number) => void
 ): Promise<{ blob: Blob, previewUrl: string }> => {
   try {
-    let convertedBlob: Blob;
+    let convertedBuffer: Buffer;
+    let mimeType: string;
 
     const simulateProgress = (start: number, end: number, duration: number) => {
       const step = 100;
@@ -32,21 +45,53 @@ export const convertHeicToFormat = async (
 
     const progressInterval = simulateProgress(0, 90, 2000);
 
-    if (targetFormat === 'webp') {
-      const pngBlob = await heic2any({
-        blob: file,
-        toType: 'image/png',
-        quality: 0.95,
-      }) as Blob;
+    // Convert file to buffer
+    const inputBuffer = await fileToBuffer(file);
 
-      convertedBlob = await convertPngToWebp(pngBlob);
-    } else {
-      convertedBlob = await heic2any({
-        blob: file,
-        toType: `image/${targetFormat === 'jpg' ? 'jpeg' : targetFormat}`,
-        quality: 0.95,
-      }) as Blob;
+    // Convert HEIC to target format
+    const format = getTargetFormat(targetFormat);
+    convertedBuffer = await convert({
+      buffer: inputBuffer,
+      format,
+      quality: 0.95
+    });
+
+    if (targetFormat === 'webp') {
+      // For WEBP, we need to convert the PNG buffer to WEBP
+      const pngBlob = bufferToBlob(convertedBuffer, 'image/png');
+      
+      // Convert PNG to WebP using canvas
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = URL.createObjectURL(pngBlob);
+      });
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+
+      const webpBlob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else resolve(pngBlob); // Fallback to PNG if WebP conversion fails
+        }, 'image/webp', 0.95);
+      });
+
+      clearInterval(progressInterval);
+      onProgress?.(100);
+
+      const previewUrl = URL.createObjectURL(webpBlob);
+      return { blob: webpBlob, previewUrl };
     }
+
+    // For JPG and PNG formats
+    mimeType = `image/${targetFormat === 'jpg' ? 'jpeg' : targetFormat}`;
+    const convertedBlob = bufferToBlob(convertedBuffer, mimeType);
 
     clearInterval(progressInterval);
     onProgress?.(100);
