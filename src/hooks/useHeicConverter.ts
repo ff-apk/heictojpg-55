@@ -9,6 +9,9 @@ interface Qualities {
   [key: string]: number;
 }
 
+const CHUNK_SIZE = 2; // Process 2 files at a time for large batches
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max file size
+
 const getConversionMessage = (count: number, format: string, quality: number, includesNonHeic: boolean) => {
   const pluralSuffix = count > 1 ? 's' : '';
   const actionVerb = includesNonHeic ? 'processed' : 'converted';
@@ -41,22 +44,108 @@ export const useHeicConverter = () => {
   }));
   
   const { toast } = useToast();
-
   const quality = qualities[format];
+
+  const cleanupObjectURLs = () => {
+    images.forEach(image => {
+      if (image.previewUrl) {
+        URL.revokeObjectURL(image.previewUrl);
+      }
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      cleanupObjectURLs();
+    };
+  }, []);
+
+  const processImagesSequentially = async (files: File[]) => {
+    const totalCount = files.length;
+    setTotalImages(totalCount);
+    setConvertedCount(0);
+    setShowProgress(true);
+    setProgress(0);
+
+    const incrementPerImage = 100 / totalCount;
+    let currentProgress = 0;
+    let hasNonHeicFiles = false;
+
+    for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+      const chunk = files.slice(i, i + CHUNK_SIZE);
+      
+      for (const file of chunk) {
+        try {
+          if (file.size > MAX_FILE_SIZE) {
+            throw new Error(`File ${file.name} is too large (max ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+          }
+
+          const imageResult = await convertHeicToFormat(
+            file,
+            format,
+            qualities[format],
+            (fileProgress) => {
+              const mappedProgress = currentProgress + (fileProgress * incrementPerImage / 100);
+              setProgress(Math.min(mappedProgress, 100));
+            }
+          );
+
+          hasNonHeicFiles = hasNonHeicFiles || !imageResult.isHeic;
+
+          const newImage: ConvertedImage = {
+            id: Math.random().toString(36).substr(2, 9),
+            originalFile: file,
+            previewUrl: imageResult.previewUrl,
+            fileName: getNewFileName(file.name, format),
+            exifData: null,
+            convertedBlob: imageResult.blob,
+            progress: 100,
+          };
+
+          setImages(prev => [...prev, newImage]);
+          setConvertedCount(prev => prev + 1);
+        } catch (error) {
+          console.error(`Failed to convert ${file.name}:`, error);
+          
+          if (error instanceof Error && error.message.includes('out of memory')) {
+            toast({
+              title: "Memory Error",
+              description: `Failed to convert ${file.name} - file may be too large`,
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: `Conversion failed for ${file.name}`,
+              variant: "destructive",
+            });
+          }
+        }
+
+        currentProgress += incrementPerImage;
+        setProgress(Math.min(currentProgress, 100));
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      if (typeof window.gc === 'function') {
+        window.gc();
+      }
+    }
+
+    setTimeout(() => {
+      setShowProgress(false);
+      setProgress(0);
+    }, 1000);
+
+    return hasNonHeicFiles;
+  };
 
   const handleReconversion = async (newQuality?: number) => {
     const currentQuality = format === 'png' ? 0.95 : (newQuality ?? qualities[format]);
     
-    const currentImages = images.map(img => ({
-      id: img.id,
-      originalFile: img.originalFile,
-      fileName: img.fileName.substring(0, img.fileName.lastIndexOf('.')),
-    }));
-
-    setImages(prev => prev.map(img => ({
-      ...img,
-      fileName: `${img.fileName.substring(0, img.fileName.lastIndexOf('.'))}.${format}`
-    })));
+    cleanupObjectURLs();
+    setImages([]);
 
     const toastId = toast({
       title: "Converting images...",
@@ -64,74 +153,14 @@ export const useHeicConverter = () => {
     });
 
     try {
-      const results = await Promise.allSettled(
-        currentImages.map(async (image) => {
-          try {
-            const { blob, previewUrl } = await convertHeicToFormat(
-              image.originalFile,
-              format,
-              currentQuality,
-              (progress) => {
-                setImages(prev => prev.map(img =>
-                  img.id === image.id ? {
-                    ...img,
-                    progress,
-                    fileName: `${image.fileName}.${format}`
-                  } : img
-                ));
-              }
-            );
-
-            const oldImage = images.find(img => img.id === image.id);
-            if (oldImage?.previewUrl) {
-              URL.revokeObjectURL(oldImage.previewUrl);
-            }
-
-            return {
-              id: image.id,
-              originalFile: image.originalFile,
-              previewUrl,
-              fileName: `${image.fileName}.${format}`,
-              exifData: null,
-              convertedBlob: blob,
-              progress: 100,
-            };
-          } catch (error) {
-            console.error(`Failed to convert ${image.originalFile.name}:`, error);
-            throw new Error(`Failed to convert ${image.originalFile.name}`);
-          }
-        })
+      const hasNonHeic = await processImagesSequentially(
+        images.map(img => img.originalFile)
       );
 
-      const successfulConversions = results
-        .filter((result): result is PromiseFulfilledResult<ConvertedImage> => 
-          result.status === 'fulfilled'
-        )
-        .map(result => result.value);
-
-      const failedConversions = results.filter(
-        result => result.status === 'rejected'
-      );
-
-      if (successfulConversions.length > 0) {
-        setImages(prev => {
-          const nonNewImages = prev.filter(p => !currentImages.find(n => n.id === p.id));
-          return [...successfulConversions, ...nonNewImages];
-        });
-
-        toast({
-          title: "Conversion complete",
-          description: getConversionMessage(successfulConversions.length, format, currentQuality),
-        });
-      }
-
-      if (failedConversions.length > 0) {
-        toast({
-          title: "Some conversions failed",
-          description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert`,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Conversion complete",
+        description: getConversionMessage(images.length, format, currentQuality, hasNonHeic),
+      });
     } catch (error) {
       console.error('Unexpected error during conversion:', error);
       toast({
@@ -144,91 +173,6 @@ export const useHeicConverter = () => {
     }
   };
 
-  const setQuality = (newQuality: number) => {
-    if (format === 'png') return;
-
-    setQualities(prev => ({
-      ...prev,
-      [format]: newQuality
-    }));
-    
-    localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
-
-    if (images.length > 0) {
-      setIsConverting(true);
-      handleReconversion(newQuality);
-    }
-  };
-
-  useEffect(() => {
-    localStorage.setItem('heic-convert-format', format);
-    
-    if (format === 'png') {
-      setQualities(prev => ({
-        ...prev,
-        png: 0.95
-      }));
-    }
-    
-    if (images.length > 0) {
-      setIsConverting(true);
-      handleReconversion();
-    }
-  }, [format]);
-
-  const processImagesSequentially = async (files: File[]) => {
-    const totalCount = files.length;
-    setTotalImages(totalCount);
-    setConvertedCount(0);
-    setShowProgress(true);
-    setProgress(0);
-
-    const incrementPerImage = 100 / totalCount;
-    let currentProgress = 0;
-
-    for (const file of files) {
-      try {
-        const imageResult = await convertHeicToFormat(
-          file,
-          format,
-          qualities[format],
-          (fileProgress) => {
-            const mappedProgress = currentProgress + (fileProgress * incrementPerImage / 100);
-            setProgress(Math.min(mappedProgress, 100));
-          }
-        );
-
-        const newImage: ConvertedImage = {
-          id: Math.random().toString(36).substr(2, 9),
-          originalFile: file,
-          previewUrl: imageResult.previewUrl,
-          fileName: getNewFileName(file.name, format),
-          exifData: null,
-          convertedBlob: imageResult.blob,
-          progress: 100,
-        };
-
-        setImages(prev => [newImage, ...prev]);
-        setConvertedCount(prev => prev + 1);
-      } catch (error) {
-        console.error(`Failed to convert ${file.name}:`, error);
-        toast({
-          title: "Error",
-          description: `Conversion failed for ${file.name}`,
-          variant: "destructive",
-        });
-      }
-
-      currentProgress += incrementPerImage;
-      setProgress(Math.min(currentProgress, 100));
-    }
-
-    setTimeout(() => {
-      setShowProgress(false);
-      setProgress(0);
-    }, 1000);
-  };
-
   const handleFiles = async (files: File[]) => {
     const allFiles = Array.from(files);
     const filesToProcess = allFiles.slice(0, MAX_FILES);
@@ -236,10 +180,11 @@ export const useHeicConverter = () => {
     const excludedCount = excludedFiles.length;
 
     setIsConverting(true);
+    cleanupObjectURLs();
     setImages([]);
 
     try {
-      await processImagesSequentially(filesToProcess);
+      const hasNonHeic = await processImagesSequentially(filesToProcess);
 
       if (excludedCount > 0) {
         setTimeout(() => {
@@ -260,6 +205,15 @@ export const useHeicConverter = () => {
     } finally {
       setIsConverting(false);
     }
+  };
+
+  const reset = () => {
+    cleanupObjectURLs();
+    setImages([]);
+    setProgress(0);
+    setShowProgress(false);
+    setTotalImages(0);
+    setConvertedCount(0);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -319,13 +273,6 @@ export const useHeicConverter = () => {
     setTimeout(() => {
       URL.revokeObjectURL(url);
     }, 1000);
-  };
-
-  const reset = () => {
-    images.forEach(image => {
-      URL.revokeObjectURL(image.previewUrl);
-    });
-    setImages([]);
   };
 
   const startEditing = (imageId: string) => {
@@ -400,7 +347,18 @@ export const useHeicConverter = () => {
     totalImages,
     convertedCount,
     setFormat,
-    setQuality,
+    setQuality: (newQuality: number) => {
+      if (format === 'png') return;
+      setQualities(prev => ({
+        ...prev,
+        [format]: newQuality
+      }));
+      localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
+      if (images.length > 0) {
+        setIsConverting(true);
+        handleReconversion(newQuality);
+      }
+    },
     handleFiles,
     handleDragOver,
     handleDragEnter,
