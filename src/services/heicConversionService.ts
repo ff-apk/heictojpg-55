@@ -1,5 +1,5 @@
 
-import heic2any from "heic2any";
+import { heicTo } from "heic-to";
 import { ImageFormat } from "@/types/heicConverter";
 import { convertPngToWebp } from "@/utils/heicConverterUtils";
 
@@ -33,19 +33,22 @@ export const convertHeicToFormat = async (
     const progressInterval = simulateProgress(0, 90, 2000);
 
     if (targetFormat === 'webp') {
-      const pngBlob = await heic2any({
+      // First convert to PNG using heic-to
+      const pngBlob = await heicTo({
         blob: file,
-        toType: 'image/png',
-        quality: 0.95,
-      }) as Blob;
+        type: 'image/png',
+        quality: 1
+      });
 
+      // Then convert PNG to WebP using existing utility
       convertedBlob = await convertPngToWebp(pngBlob);
     } else {
-      convertedBlob = await heic2any({
+      // Direct conversion to JPG or PNG
+      convertedBlob = await heicTo({
         blob: file,
-        toType: `image/${targetFormat === 'jpg' ? 'jpeg' : targetFormat}`,
-        quality: 0.95,
-      }) as Blob;
+        type: targetFormat === 'jpg' ? 'image/jpeg' : 'image/png',
+        quality: targetFormat === 'jpg' ? 0.95 : 1
+      });
     }
 
     clearInterval(progressInterval);
@@ -58,4 +61,3 @@ export const convertHeicToFormat = async (
     throw error;
   }
 };
-

@@ -179,7 +179,9 @@ export const useHeicConverter = () => {
     const excludedFiles = allFiles.slice(MAX_FILES);
     const excludedCount = excludedFiles.length;
 
-    const validFiles = filesToProcess.filter(isHeicOrHeif);
+    const validationPromises = filesToProcess.map(isHeicOrHeif);
+    const validationResults = await Promise.all(validationPromises);
+    const validFiles = filesToProcess.filter((_, index) => validationResults[index]);
 
     if (validFiles.length === 0) {
       toast({

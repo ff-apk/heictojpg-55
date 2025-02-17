@@ -1,11 +1,9 @@
 
+import { isHeic } from "heic-to";
 import { ImageFormat } from "@/types/heicConverter";
 
-export const isHeicOrHeif = (file: File) => {
-  return file.type === 'image/heic' || 
-         file.type === 'image/heif' || 
-         file.name.toLowerCase().endsWith('.heic') || 
-         file.name.toLowerCase().endsWith('.heif');
+export const isHeicOrHeif = async (file: File): Promise<boolean> => {
+  return await isHeic(file);
 };
 
 export const getNewFileName = (originalName: string, targetFormat: ImageFormat) => {
@@ -36,7 +34,7 @@ export const convertPngToWebp = async (pngBlob: Blob): Promise<Blob> => {
           }
         },
         'image/webp',
-        0.9
+        0.95
       );
     };
     img.onerror = () => reject(new Error('Failed to load PNG image'));
