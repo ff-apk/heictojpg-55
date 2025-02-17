@@ -70,7 +70,6 @@ const HeicConverter = () => {
 
   const handleQualityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
-    // Allow only numbers and one decimal point
     if (value.match(/^\d*\.?\d{0,2}$/) && parseFloat(value) <= 1) {
       setQualityInput(value);
       const numValue = parseFloat(value);
@@ -128,29 +127,31 @@ const HeicConverter = () => {
         </Button>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-4">
-              <label className="text-sm font-medium">Quality:</label>
-              <Input
-                type="text"
-                value={qualityInput}
-                onChange={handleQualityInputChange}
-                className="w-20"
-                maxLength={4}
+          {format !== 'png' && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium">Quality:</label>
+                <Input
+                  type="text"
+                  value={qualityInput}
+                  onChange={handleQualityInputChange}
+                  className="w-20"
+                  maxLength={4}
+                  disabled={isConverting}
+                />
+              </div>
+              <Slider
+                defaultValue={[1]}
+                max={1}
+                min={0}
+                step={0.01}
+                value={[quality]}
+                onValueChange={handleSliderChange}
                 disabled={isConverting}
+                className="my-4"
               />
             </div>
-            <Slider
-              defaultValue={[1]}
-              max={1}
-              min={0}
-              step={0.01}
-              value={[quality]}
-              onValueChange={handleSliderChange}
-              disabled={isConverting}
-              className="my-4"
-            />
-          </div>
+          )}
 
           <div className="flex justify-center space-x-4">
             <div className={`flex justify-center transition-all duration-500 ${

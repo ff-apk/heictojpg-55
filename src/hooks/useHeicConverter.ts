@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -24,7 +23,7 @@ export const useHeicConverter = () => {
   });
   const [qualities, setQualities] = useState<Qualities>(() => ({
     jpg: parseFloat(localStorage.getItem('heic-convert-quality-jpg') || '1'),
-    png: parseFloat(localStorage.getItem('heic-convert-quality-png') || '1'),
+    png: 0.95,
     webp: parseFloat(localStorage.getItem('heic-convert-quality-webp') || '1'),
   }));
   
@@ -33,7 +32,7 @@ export const useHeicConverter = () => {
   const quality = qualities[format];
 
   const handleReconversion = async (newQuality?: number) => {
-    const currentQuality = newQuality ?? qualities[format];
+    const currentQuality = format === 'png' ? 0.95 : (newQuality ?? qualities[format]);
     
     const currentImages = images.map(img => ({
       id: img.id,
@@ -133,6 +132,8 @@ export const useHeicConverter = () => {
   };
 
   const setQuality = (newQuality: number) => {
+    if (format === 'png') return;
+
     setQualities(prev => ({
       ...prev,
       [format]: newQuality
@@ -148,6 +149,13 @@ export const useHeicConverter = () => {
 
   useEffect(() => {
     localStorage.setItem('heic-convert-format', format);
+    
+    if (format === 'png') {
+      setQualities(prev => ({
+        ...prev,
+        png: 0.95
+      }));
+    }
     
     if (images.length > 0) {
       setIsConverting(true);
