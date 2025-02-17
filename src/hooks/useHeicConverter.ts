@@ -68,7 +68,7 @@ export const useHeicConverter = () => {
     };
   }, []);
 
-  const processImagesSequentially = async (files: File[]) => {
+  const processImagesSequentially = async (files: File[], targetFormat?: ImageFormat) => {
     const totalCount = files.length;
     setTotalImages(totalCount);
     setConvertedCount(0);
@@ -90,8 +90,8 @@ export const useHeicConverter = () => {
 
           const imageResult = await convertHeicToFormat(
             file,
-            format,
-            qualities[format],
+            targetFormat || format,
+            qualities[targetFormat || format],
             (fileProgress) => {
               const mappedProgress = currentProgress + (fileProgress * incrementPerImage / 100);
               setProgress(Math.min(mappedProgress, 100));
@@ -104,7 +104,7 @@ export const useHeicConverter = () => {
             id: Math.random().toString(36).substr(2, 9),
             originalFile: file,
             previewUrl: imageResult.previewUrl,
-            fileName: getNewFileName(file.name, format),
+            fileName: getNewFileName(file.name, targetFormat || format),
             exifData: null,
             convertedBlob: imageResult.blob,
             progress: 100,
@@ -149,8 +149,8 @@ export const useHeicConverter = () => {
     return hasNonHeicFiles;
   };
 
-  const handleReconversion = async (newQuality?: number, trigger: ConversionTrigger = 'quality') => {
-    const currentQuality = format === 'png' ? 0.95 : (newQuality ?? qualities[format]);
+  const handleReconversion = async (newQuality?: number, trigger: ConversionTrigger = 'quality', targetFormat?: ImageFormat) => {
+    const currentQuality = targetFormat === 'png' ? 0.95 : (newQuality ?? qualities[targetFormat || format]);
     
     cleanupObjectURLs();
     const currentImages = images.map(img => ({
@@ -169,12 +169,13 @@ export const useHeicConverter = () => {
 
     try {
       const hasNonHeic = await processImagesSequentially(
-        currentImages.map(img => img.originalFile)
+        currentImages.map(img => img.originalFile),
+        targetFormat
       );
 
       toast({
         title: "Conversion complete",
-        description: getConversionMessage(currentImages.length, format, currentQuality, hasNonHeic),
+        description: getConversionMessage(currentImages.length, targetFormat || format, currentQuality, hasNonHeic),
       });
     } catch (error) {
       console.error('Unexpected error during conversion:', error);
@@ -367,7 +368,7 @@ export const useHeicConverter = () => {
       setFormat(newFormat);
       if (images.length > 0) {
         setIsConverting(true);
-        handleReconversion(undefined, 'format');
+        handleReconversion(undefined, 'format', newFormat);
       }
     },
     setQuality: (newQuality: number) => {
