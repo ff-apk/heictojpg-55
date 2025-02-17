@@ -38,11 +38,6 @@ export const useHeicConverter = () => {
     }));
     
     localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
-    
-    toast({
-      title: `${newQuality} Quality set for ${format.toUpperCase()} conversion`,
-      duration: 3000
-    });
 
     if (images.length > 0) {
       setIsConverting(true);
@@ -118,10 +113,14 @@ export const useHeicConverter = () => {
       );
 
       if (successfulConversions.length > 0) {
-        setImages(successfulConversions);
+        setImages(prev => {
+          const nonNewImages = prev.filter(p => !currentImages.find(n => n.id === p.id));
+          return [...successfulConversions, ...nonNewImages];
+        });
+
         toast({
           title: "Conversion complete",
-          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
+          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()} with quality ${qualities[format]}.`,
         });
       }
 
@@ -132,8 +131,6 @@ export const useHeicConverter = () => {
           variant: "destructive",
         });
       }
-
-      setIsConverting(false);
     } catch (error) {
       console.error('Unexpected error during conversion:', error);
       toast({
@@ -141,6 +138,8 @@ export const useHeicConverter = () => {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -152,66 +151,6 @@ export const useHeicConverter = () => {
       handleReconversion();
     }
   }, [format]);
-
-  const startEditing = (imageId: string) => {
-    setEditState({ imageId, isEditing: true });
-  };
-
-  const cancelEditing = () => {
-    setEditState({ imageId: null, isEditing: false });
-  };
-
-  const validateFileName = (name: string, extension: string): string => {
-    let sanitized = name.replace(/[<>:"/\\|?*]/g, '').trim();
-    
-    if (!sanitized) {
-      sanitized = 'image';
-    }
-    
-    return `${sanitized}.${extension}`;
-  };
-
-  const handleRename = (imageId: string, newName: string) => {
-    const image = images.find(img => img.id === imageId);
-    if (!image) return;
-
-    const extension = image.fileName.split('.').pop() || format;
-    const currentName = image.fileName.replace(`.${extension}`, '');
-    
-    if (newName === currentName) {
-      cancelEditing();
-      return;
-    }
-
-    const oldFileName = image.fileName;
-    const validatedFileName = validateFileName(newName, extension);
-
-    setImages(prev => prev.map(img => {
-      if (img.id === imageId) {
-        const newPreviewUrl = img.previewUrl 
-          ? URL.createObjectURL(img.convertedBlob!)
-          : img.previewUrl;
-
-        if (img.previewUrl) {
-          URL.revokeObjectURL(img.previewUrl);
-        }
-
-        return {
-          ...img,
-          fileName: validatedFileName,
-          previewUrl: newPreviewUrl,
-        };
-      }
-      return img;
-    }));
-
-    cancelEditing();
-
-    toast({
-      title: "File renamed",
-      description: `Successfully renamed ${oldFileName} to ${validatedFileName}`,
-    });
-  };
 
   const handleFiles = async (files: File[]) => {
     const allFiles = Array.from(files);
@@ -295,7 +234,7 @@ export const useHeicConverter = () => {
       if (successfulConversions.length > 0) {
         toast({
           title: "Conversion complete",
-          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()}.`,
+          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()} with quality ${qualities[format]}.`,
         });
 
         if (excludedCount > 0) {
@@ -392,6 +331,66 @@ export const useHeicConverter = () => {
       URL.revokeObjectURL(image.previewUrl);
     });
     setImages([]);
+  };
+
+  const startEditing = (imageId: string) => {
+    setEditState({ imageId, isEditing: true });
+  };
+
+  const cancelEditing = () => {
+    setEditState({ imageId: null, isEditing: false });
+  };
+
+  const validateFileName = (name: string, extension: string): string => {
+    let sanitized = name.replace(/[<>:"/\\|?*]/g, '').trim();
+    
+    if (!sanitized) {
+      sanitized = 'image';
+    }
+    
+    return `${sanitized}.${extension}`;
+  };
+
+  const handleRename = (imageId: string, newName: string) => {
+    const image = images.find(img => img.id === imageId);
+    if (!image) return;
+
+    const extension = image.fileName.split('.').pop() || format;
+    const currentName = image.fileName.replace(`.${extension}`, '');
+    
+    if (newName === currentName) {
+      cancelEditing();
+      return;
+    }
+
+    const oldFileName = image.fileName;
+    const validatedFileName = validateFileName(newName, extension);
+
+    setImages(prev => prev.map(img => {
+      if (img.id === imageId) {
+        const newPreviewUrl = img.previewUrl 
+          ? URL.createObjectURL(img.convertedBlob!)
+          : img.previewUrl;
+
+        if (img.previewUrl) {
+          URL.revokeObjectURL(img.previewUrl);
+        }
+
+        return {
+          ...img,
+          fileName: validatedFileName,
+          previewUrl: newPreviewUrl,
+        };
+      }
+      return img;
+    }));
+
+    cancelEditing();
+
+    toast({
+      title: "File renamed",
+      description: `Successfully renamed ${oldFileName} to ${validatedFileName}`,
+    });
   };
 
   return {
