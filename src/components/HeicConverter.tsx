@@ -27,6 +27,10 @@ const HeicConverter = () => {
     isConverting,
     editState,
     quality,
+    progress,
+    showProgress,
+    totalImages,
+    convertedCount,
     setFormat,
     setQuality,
     handleFiles,
@@ -216,99 +220,97 @@ const HeicConverter = () => {
               </Button>
             </div>
           )}
+
+          {showProgress && (
+            <div className="relative p-4 border border-border rounded-lg">
+              <Progress value={progress} className="h-6" />
+              <span className="absolute inset-0 flex items-center justify-center text-sm">
+                Converted {convertedCount}/{totalImages} Image{totalImages > 1 ? 's' : ''}...
+              </span>
+            </div>
+          )}
         </div>
 
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
             <div className="space-y-4">
-              {image.progress < 100 ? (
-                <div className="relative p-4 border border-border rounded-lg">
-                  <Progress value={image.progress} className="h-6" />
-                  <span className="absolute inset-0 flex items-center justify-center text-sm">
-                    {image.fileName} - {Math.round(image.progress)}%
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <div 
-                    className={cn(
-                      "border border-border rounded-lg overflow-hidden cursor-pointer",
-                      "hover:border-primary transition-colors duration-200",
-                      isConverting && "opacity-50 pointer-events-none"
-                    )}
-                    onClick={() => openImageInNewTab(image.id)}
-                    title="Click to open in new tab"
-                  >
-                    <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
-                  </div>
-                  
-                  <div className="flex flex-col items-center gap-1">
+              <div 
+                className={cn(
+                  "border border-border rounded-lg overflow-hidden cursor-pointer",
+                  "hover:border-primary transition-colors duration-200",
+                  isConverting && "opacity-50 pointer-events-none"
+                )}
+                onClick={() => openImageInNewTab(image.id)}
+                title="Click to open in new tab"
+              >
+                <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
+              </div>
+              
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center gap-2">
+                  {editState.isEditing && editState.imageId === image.id ? (
+                    <form 
+                      className="flex items-center gap-2"
+                      onSubmit={(e) => handleEditSubmit(image.id, e)}
+                    >
+                      <Input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => handleEditSubmit(image.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            handleEditCancel();
+                          }
+                        }}
+                        className="w-48"
+                        autoFocus
+                      />
+                      <span className="text-muted-foreground">
+                        .{format}
+                      </span>
+                    </form>
+                  ) : (
                     <div className="flex items-center gap-2">
-                      {editState.isEditing && editState.imageId === image.id ? (
-                        <form 
-                          className="flex items-center gap-2"
-                          onSubmit={(e) => handleEditSubmit(image.id, e)}
-                        >
-                          <Input
-                            type="text"
-                            value={editingName}
-                            onChange={(e) => setEditingName(e.target.value)}
-                            onBlur={() => handleEditSubmit(image.id)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Escape') {
-                                handleEditCancel();
-                              }
-                            }}
-                            className="w-48"
-                            autoFocus
-                          />
-                          <span className="text-muted-foreground">
-                            .{format}
-                          </span>
-                        </form>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <p className="text-center text-sm text-muted-foreground">
-                            {image.fileName}
-                          </p>
-                          <button
-                            onClick={() => handleEditStart(image.id, image.fileName)}
-                            className="p-1 hover:bg-secondary rounded-sm transition-colors"
-                            title="Rename file"
-                          >
-                            <Pencil className="w-4 h-4 text-muted-foreground" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {image.convertedBlob && (
-                      <p className="text-sm text-muted-foreground">
-                        {formatFileSize(image.convertedBlob.size)}
+                      <p className="text-center text-sm text-muted-foreground">
+                        {image.fileName}
                       </p>
-                    )}
-                  </div>
+                      <button
+                        onClick={() => handleEditStart(image.id, image.fileName)}
+                        className="p-1 hover:bg-secondary rounded-sm transition-colors"
+                        title="Rename file"
+                      >
+                        <Pencil className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {image.convertedBlob && (
+                  <p className="text-sm text-muted-foreground">
+                    {formatFileSize(image.convertedBlob.size)}
+                  </p>
+                )}
+              </div>
 
-                  <div className="flex justify-center gap-2">
-                    <Button 
-                      onClick={() => downloadImage(image.id)}
-                      className="gap-2"
-                      disabled={isConverting}
-                    >
-                      <Download className="w-5 h-5" />
-                      Download
-                    </Button>
-                    <Button 
-                      onClick={() => handleExifData(image.id)}
-                      variant="outline"
-                      className="gap-2"
-                      disabled={isConverting}
-                    >
-                      <Info className="w-5 h-5" />
-                      Exif Data
-                    </Button>
-                  </div>
-                </>
-              )}
+              <div className="flex justify-center gap-2">
+                <Button 
+                  onClick={() => downloadImage(image.id)}
+                  className="gap-2"
+                  disabled={isConverting}
+                >
+                  <Download className="w-5 h-5" />
+                  Download
+                </Button>
+                <Button 
+                  onClick={() => handleExifData(image.id)}
+                  variant="outline"
+                  className="gap-2"
+                  disabled={isConverting}
+                >
+                  <Info className="w-5 h-5" />
+                  Exif Data
+                </Button>
+              </div>
             </div>
             {index < images.length - 1 && <Separator className="my-6" />}
           </React.Fragment>

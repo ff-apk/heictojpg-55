@@ -12,27 +12,6 @@ export const convertHeicToFormat = async (
   try {
     let convertedBlob: Blob;
 
-    const simulateProgress = (start: number, end: number, duration: number) => {
-      const step = 100;
-      const increment = (end - start) / step;
-      const stepDuration = duration / step;
-      
-      let currentProgress = start;
-      const interval = setInterval(() => {
-        currentProgress += increment;
-        if (currentProgress >= end) {
-          clearInterval(interval);
-          onProgress?.(end);
-        } else {
-          onProgress?.(currentProgress);
-        }
-      }, stepDuration);
-
-      return interval;
-    };
-
-    const progressInterval = simulateProgress(0, 90, 2000);
-
     try {
       if (targetFormat === 'webp') {
         // First convert to PNG using heic-to
@@ -41,9 +20,11 @@ export const convertHeicToFormat = async (
           type: 'image/png',
           quality: 1
         });
+        onProgress?.(50);
 
         // Then convert PNG to WebP using existing utility with the specified quality
         convertedBlob = await convertPngToWebp(pngBlob, quality);
+        onProgress?.(90);
       } else {
         // Direct conversion to JPG or PNG
         convertedBlob = await heicTo({
@@ -51,19 +32,15 @@ export const convertHeicToFormat = async (
           type: targetFormat === 'jpg' ? 'image/jpeg' : 'image/png',
           quality: quality
         });
+        onProgress?.(90);
       }
 
-      clearInterval(progressInterval);
-      onProgress?.(100);
-
       const previewUrl = URL.createObjectURL(convertedBlob);
+      onProgress?.(100);
       return { blob: convertedBlob, previewUrl, isHeic: true };
     } catch (error) {
       console.log('HEIC conversion failed, trying as regular image:', error);
       // If heic-to conversion fails, try processing as regular image
-      clearInterval(progressInterval);
-      onProgress?.(90);
-      
       const result = await processRegularImage(file, targetFormat, quality);
       onProgress?.(100);
       return { ...result, isHeic: false };
@@ -73,4 +50,3 @@ export const convertHeicToFormat = async (
     throw error;
   }
 };
-
