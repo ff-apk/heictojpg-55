@@ -1,5 +1,4 @@
-
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw, Pencil } from "lucide-react";
 import { useHeicConverter } from "@/hooks/useHeicConverter";
@@ -45,6 +44,10 @@ const HeicConverter = () => {
 
   const [editingName, setEditingName] = useState("");
   const [qualityInput, setQualityInput] = useState(quality.toString());
+
+  useEffect(() => {
+    setQualityInput(quality.toString());
+  }, [format, quality]);
 
   const handleEditStart = (imageId: string, currentName: string) => {
     const baseName = currentName.substring(0, currentName.lastIndexOf('.'));
@@ -142,7 +145,7 @@ const HeicConverter = () => {
               max={1}
               min={0}
               step={0.01}
-              value={[parseFloat(qualityInput) || 0]}
+              value={[quality]}
               onValueChange={handleSliderChange}
               disabled={isConverting}
               className="my-4"
