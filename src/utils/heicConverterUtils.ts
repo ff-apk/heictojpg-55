@@ -34,7 +34,7 @@ export const convertPngToWebp = async (pngBlob: Blob): Promise<Blob> => {
           }
         },
         'image/webp',
-        0.95
+        1
       );
     };
     img.onerror = () => reject(new Error('Failed to load PNG image'));
