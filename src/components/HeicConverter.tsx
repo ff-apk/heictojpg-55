@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw, Pencil } from "lucide-react";
@@ -93,6 +92,10 @@ const HeicConverter = () => {
   const handleSliderChange = (value: number[]) => {
     const newQuality = value[0];
     setQualityInput(newQuality.toString());
+  };
+
+  const handleSliderCommit = (value: number[]) => {
+    const newQuality = value[0];
     setQuality(newQuality);
   };
 
@@ -147,7 +150,7 @@ const HeicConverter = () => {
                   value={qualityInput}
                   onChange={handleQualityInputChange}
                   onBlur={handleQualityInputBlur}
-                  className="w-20"
+                  className="w-20 bg-gray-100 dark:bg-gray-900"
                   maxLength={4}
                   disabled={isConverting}
                 />
@@ -157,8 +160,9 @@ const HeicConverter = () => {
                 max={1}
                 min={0}
                 step={0.01}
-                value={[quality]}
+                value={[parseFloat(qualityInput) || 0]}
                 onValueChange={handleSliderChange}
+                onValueCommit={handleSliderCommit}
                 disabled={isConverting}
                 className="my-4"
               />
