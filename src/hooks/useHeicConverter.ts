@@ -9,8 +9,10 @@ interface Qualities {
   [key: string]: number;
 }
 
-const CHUNK_SIZE = 2; // Process 2 files at a time for large batches
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max file size
+type ConversionTrigger = 'format' | 'quality';
+
+const CHUNK_SIZE = 2;
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 const getConversionMessage = (count: number, format: string, quality: number, includesNonHeic: boolean) => {
   const pluralSuffix = count > 1 ? 's' : '';
@@ -19,6 +21,12 @@ const getConversionMessage = (count: number, format: string, quality: number, in
     return `Successfully ${actionVerb} ${count} image${pluralSuffix} to PNG`;
   }
   return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${quality}`;
+};
+
+const getConversionStartMessage = (trigger: ConversionTrigger) => {
+  return trigger === 'format' 
+    ? "Please wait while we convert your images to the new format"
+    : "Please wait while we convert your images to the new quality";
 };
 
 export const useHeicConverter = () => {
@@ -141,25 +149,32 @@ export const useHeicConverter = () => {
     return hasNonHeicFiles;
   };
 
-  const handleReconversion = async (newQuality?: number) => {
+  const handleReconversion = async (newQuality?: number, trigger: ConversionTrigger = 'quality') => {
     const currentQuality = format === 'png' ? 0.95 : (newQuality ?? qualities[format]);
     
     cleanupObjectURLs();
-    setImages([]);
+    const currentImages = images.map(img => ({
+      id: img.id,
+      originalFile: img.originalFile,
+      fileName: img.fileName.substring(0, img.fileName.lastIndexOf('.')),
+    }));
 
-    const toastId = toast({
+    setImages([]);
+    setIsConverting(true);
+
+    toast({
       title: "Converting images...",
-      description: "Please wait while we convert your images to the new format",
+      description: getConversionStartMessage(trigger),
     });
 
     try {
       const hasNonHeic = await processImagesSequentially(
-        images.map(img => img.originalFile)
+        currentImages.map(img => img.originalFile)
       );
 
       toast({
         title: "Conversion complete",
-        description: getConversionMessage(images.length, format, currentQuality, hasNonHeic),
+        description: getConversionMessage(currentImages.length, format, currentQuality, hasNonHeic),
       });
     } catch (error) {
       console.error('Unexpected error during conversion:', error);
@@ -346,7 +361,15 @@ export const useHeicConverter = () => {
     showProgress,
     totalImages,
     convertedCount,
-    setFormat,
+    setFormat: (newFormat: ImageFormat) => {
+      if (newFormat === format) return;
+      localStorage.setItem('heic-convert-format', newFormat);
+      setFormat(newFormat);
+      if (images.length > 0) {
+        setIsConverting(true);
+        handleReconversion(undefined, 'format');
+      }
+    },
     setQuality: (newQuality: number) => {
       if (format === 'png') return;
       setQualities(prev => ({
@@ -356,7 +379,7 @@ export const useHeicConverter = () => {
       localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
       if (images.length > 0) {
         setIsConverting(true);
-        handleReconversion(newQuality);
+        handleReconversion(newQuality, 'quality');
       }
     },
     handleFiles,
