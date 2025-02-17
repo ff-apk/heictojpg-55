@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -31,21 +32,9 @@ export const useHeicConverter = () => {
 
   const quality = qualities[format];
 
-  const setQuality = (newQuality: number) => {
-    setQualities(prev => ({
-      ...prev,
-      [format]: newQuality
-    }));
+  const handleReconversion = async (newQuality?: number) => {
+    const currentQuality = newQuality ?? qualities[format];
     
-    localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
-
-    if (images.length > 0) {
-      setIsConverting(true);
-      handleReconversion();
-    }
-  };
-
-  const handleReconversion = async () => {
     const currentImages = images.map(img => ({
       id: img.id,
       originalFile: img.originalFile,
@@ -69,7 +58,7 @@ export const useHeicConverter = () => {
             const { blob, previewUrl } = await convertHeicToFormat(
               image.originalFile,
               format,
-              qualities[format],
+              currentQuality,
               (progress) => {
                 setImages(prev => prev.map(img =>
                   img.id === image.id ? {
@@ -120,7 +109,7 @@ export const useHeicConverter = () => {
 
         toast({
           title: "Conversion complete",
-          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()} with quality ${qualities[format]}.`,
+          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()} with quality ${currentQuality}.`,
         });
       }
 
@@ -140,6 +129,20 @@ export const useHeicConverter = () => {
       });
     } finally {
       setIsConverting(false);
+    }
+  };
+
+  const setQuality = (newQuality: number) => {
+    setQualities(prev => ({
+      ...prev,
+      [format]: newQuality
+    }));
+    
+    localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
+
+    if (images.length > 0) {
+      setIsConverting(true);
+      handleReconversion(newQuality);
     }
   };
 
