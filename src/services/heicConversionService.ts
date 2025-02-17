@@ -1,5 +1,5 @@
 
-import convert from 'heic-convert';
+import convert from 'heic-convert/browser';
 import { ImageFormat } from "@/types/heicConverter";
 import { fileToBuffer, bufferToBlob } from "@/utils/bufferUtils";
 
@@ -48,7 +48,7 @@ export const convertHeicToFormat = async (
     // Convert file to buffer
     const inputBuffer = await fileToBuffer(file);
 
-    // Convert HEIC to target format
+    // Convert HEIC to target format using browser-specific convert
     const format = getTargetFormat(targetFormat);
     convertedBuffer = await convert({
       buffer: inputBuffer,
@@ -82,6 +82,9 @@ export const convertHeicToFormat = async (
         }, 'image/webp', 0.95);
       });
 
+      // Clean up the temporary URL
+      URL.revokeObjectURL(img.src);
+
       clearInterval(progressInterval);
       onProgress?.(100);
 
@@ -100,7 +103,9 @@ export const convertHeicToFormat = async (
     return { blob: convertedBlob, previewUrl };
   } catch (error) {
     console.error('Error converting HEIC:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+    }
     throw error;
   }
 };
-
