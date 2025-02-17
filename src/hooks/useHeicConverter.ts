@@ -9,6 +9,14 @@ interface Qualities {
   [key: string]: number;
 }
 
+const getConversionMessage = (count: number, format: string, quality: number) => {
+  const pluralSuffix = count > 1 ? 's' : '';
+  if (format === 'png') {
+    return `Successfully converted ${count} image${pluralSuffix} to PNG`;
+  }
+  return `Successfully converted ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${quality}`;
+};
+
 export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -47,7 +55,7 @@ export const useHeicConverter = () => {
 
     const toastId = toast({
       title: "Converting images...",
-      description: "Please wait while we convert your images to the new format.",
+      description: "Please wait while we convert your images to the new format",
     });
 
     try {
@@ -108,14 +116,14 @@ export const useHeicConverter = () => {
 
         toast({
           title: "Conversion complete",
-          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()} with quality ${currentQuality}.`,
+          description: getConversionMessage(successfulConversions.length, format, currentQuality),
         });
       }
 
       if (failedConversions.length > 0) {
         toast({
           title: "Some conversions failed",
-          description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert.`,
+          description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert`,
           variant: "destructive",
         });
       }
@@ -123,7 +131,7 @@ export const useHeicConverter = () => {
       console.error('Unexpected error during conversion:', error);
       toast({
         title: "Unexpected error",
-        description: "An unexpected error occurred. Please try again.",
+        description: "An unexpected error occurred. Please try again",
         variant: "destructive",
       });
     } finally {
@@ -185,7 +193,7 @@ export const useHeicConverter = () => {
     setIsConverting(true);
     const toastId = toast({
       title: "Converting images...",
-      description: "Please wait while we convert your images.",
+      description: "Please wait while we convert your images",
     });
 
     try {
@@ -245,14 +253,14 @@ export const useHeicConverter = () => {
       if (successfulConversions.length > 0) {
         toast({
           title: "Conversion complete",
-          description: `Successfully converted ${successfulConversions.length} image${successfulConversions.length > 1 ? 's' : ''} to ${format.toUpperCase()} with quality ${qualities[format]}.`,
+          description: getConversionMessage(successfulConversions.length, format, qualities[format]),
         });
 
         if (excludedCount > 0) {
           setTimeout(() => {
             toast({
               title: `Max upload limit is ${MAX_FILES} at a time`,
-              description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded.`,
+              description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded`,
               duration: 7000,
             });
           }, 4000);
@@ -262,7 +270,7 @@ export const useHeicConverter = () => {
       if (failedConversions.length > 0) {
         toast({
           title: "Some conversions failed",
-          description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert.`,
+          description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert`,
           variant: "destructive",
         });
       }
@@ -270,7 +278,7 @@ export const useHeicConverter = () => {
       console.error('Unexpected error during conversion:', error);
       toast({
         title: "Unexpected error",
-        description: "An unexpected error occurred. Please try again.",
+        description: "An unexpected error occurred. Please try again",
         variant: "destructive",
       });
     } finally {
