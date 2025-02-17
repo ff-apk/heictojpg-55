@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw, Pencil } from "lucide-react";
@@ -102,9 +103,9 @@ const HeicConverter = () => {
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const sizes = ['B', 'kB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
   };
 
   return (
@@ -150,7 +151,7 @@ const HeicConverter = () => {
 
         <div className="space-y-4">
           {format !== 'png' && (
-            <div className="space-y-2">
+            <div className="space-y-6">
               <div className="flex items-center gap-4">
                 <label className="text-sm font-medium">Quality:</label>
                 <Input
@@ -172,7 +173,6 @@ const HeicConverter = () => {
                 onValueChange={handleSliderChange}
                 onValueCommit={handleSliderCommit}
                 disabled={isConverting}
-                className="my-4"
               />
             </div>
           )}
