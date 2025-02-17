@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -10,12 +9,13 @@ interface Qualities {
   [key: string]: number;
 }
 
-const getConversionMessage = (count: number, format: string, quality: number) => {
+const getConversionMessage = (count: number, format: string, quality: number, includesNonHeic: boolean) => {
   const pluralSuffix = count > 1 ? 's' : '';
+  const actionVerb = includesNonHeic ? 'processed' : 'converted';
   if (format === 'png') {
-    return `Successfully converted ${count} image${pluralSuffix} to PNG`;
+    return `Successfully ${actionVerb} ${count} image${pluralSuffix} to PNG`;
   }
-  return `Successfully converted ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${quality}`;
+  return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${quality}`;
 };
 
 export const useHeicConverter = () => {
@@ -178,27 +178,14 @@ export const useHeicConverter = () => {
     const excludedFiles = allFiles.slice(MAX_FILES);
     const excludedCount = excludedFiles.length;
 
-    const validationPromises = filesToProcess.map(isHeicOrHeif);
-    const validationResults = await Promise.all(validationPromises);
-    const validFiles = filesToProcess.filter((_, index) => validationResults[index]);
-
-    if (validFiles.length === 0) {
-      toast({
-        title: "Invalid files",
-        description: "Please select HEIC or HEIF images only",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsConverting(true);
     const toastId = toast({
-      title: "Converting images...",
-      description: "Please wait while we convert your images",
+      title: "Processing images...",
+      description: "Please wait while we process your images",
     });
 
     try {
-      const newImages = validFiles.map(file => ({
+      const newImages = filesToProcess.map(file => ({
         id: Math.random().toString(36).substr(2, 9),
         originalFile: file,
         previewUrl: "",
@@ -213,7 +200,7 @@ export const useHeicConverter = () => {
       const results = await Promise.allSettled(
         newImages.map(async (image) => {
           try {
-            const { blob, previewUrl } = await convertHeicToFormat(
+            const { blob, previewUrl, isHeic } = await convertHeicToFormat(
               image.originalFile, 
               format,
               qualities[format],
@@ -228,16 +215,17 @@ export const useHeicConverter = () => {
               previewUrl,
               convertedBlob: blob,
               progress: 100,
+              isHeic,
             };
           } catch (error) {
-            console.error(`Failed to convert ${image.originalFile.name}:`, error);
-            throw new Error(`Failed to convert ${image.originalFile.name}`);
+            console.error(`Failed to process ${image.originalFile.name}:`, error);
+            throw new Error(`Failed to process ${image.originalFile.name}`);
           }
         })
       );
 
       const successfulConversions = results
-        .filter((result): result is PromiseFulfilledResult<ConvertedImage> => 
+        .filter((result): result is PromiseFulfilledResult<ConvertedImage & { isHeic: boolean }> => 
           result.status === 'fulfilled'
         )
         .map(result => result.value);
@@ -246,6 +234,8 @@ export const useHeicConverter = () => {
         result => result.status === 'rejected'
       );
 
+      const includesNonHeic = successfulConversions.some(img => !img.isHeic);
+
       setImages(prev => {
         const nonNewImages = prev.filter(p => !newImages.find(n => n.id === p.id));
         return [...successfulConversions, ...nonNewImages];
@@ -253,8 +243,13 @@ export const useHeicConverter = () => {
 
       if (successfulConversions.length > 0) {
         toast({
-          title: "Conversion complete",
-          description: getConversionMessage(successfulConversions.length, format, qualities[format]),
+          title: "Processing complete",
+          description: getConversionMessage(
+            successfulConversions.length, 
+            format, 
+            qualities[format],
+            includesNonHeic
+          ),
         });
 
         if (excludedCount > 0) {
@@ -269,14 +264,16 @@ export const useHeicConverter = () => {
       }
 
       if (failedConversions.length > 0) {
-        toast({
-          title: "Some conversions failed",
-          description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} failed to convert`,
-          variant: "destructive",
-        });
+        setTimeout(() => {
+          toast({
+            title: "Some files failed",
+            description: `${failedConversions.length} image${failedConversions.length > 1 ? 's' : ''} could not be processed`,
+            variant: "destructive",
+          });
+        }, successfulConversions.length > 0 ? 4000 : 0);
       }
     } catch (error) {
-      console.error('Unexpected error during conversion:', error);
+      console.error('Unexpected error during processing:', error);
       toast({
         title: "Unexpected error",
         description: "An unexpected error occurred. Please try again",
@@ -436,4 +433,3 @@ export const useHeicConverter = () => {
     handleRename,
   };
 };
-
