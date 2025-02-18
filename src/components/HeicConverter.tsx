@@ -15,10 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const HeicConverter = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const [isFormatSelectOpen, setIsFormatSelectOpen] = useState(false);
+  const [selectionMode, setSelectionMode] = useState<'image' | 'folder'>(() => 
+    (localStorage.getItem('heic-selection-mode') as 'image' | 'folder') || 'image'
+  );
+
   const {
     images,
     isDragging,
@@ -52,6 +58,22 @@ const HeicConverter = () => {
   useEffect(() => {
     setQualityInput(quality.toString());
   }, [format, quality]);
+
+  const handleModeChange = (value: string) => {
+    if (value) {
+      const newMode = value as 'image' | 'folder';
+      setSelectionMode(newMode);
+      localStorage.setItem('heic-selection-mode', newMode);
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (selectionMode === 'folder') {
+      folderInputRef.current?.click();
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
 
   const handleEditStart = (imageId: string, currentName: string) => {
     const baseName = currentName.substring(0, currentName.lastIndexOf('.'));
@@ -111,7 +133,25 @@ const HeicConverter = () => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col items-center gap-2">
+          <ToggleGroup 
+            type="single" 
+            value={selectionMode} 
+            onValueChange={handleModeChange}
+            className="flex gap-2"
+          >
+            <ToggleGroupItem value="image" aria-label="Image Mode" className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Image Mode
+            </ToggleGroupItem>
+            <ToggleGroupItem value="folder" aria-label="Folder Mode" className="flex items-center gap-2">
+              <FolderOpen className="w-4 h-4" />
+              Folder Mode
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+
         <input
           type="file"
           ref={fileInputRef}
@@ -121,6 +161,22 @@ const HeicConverter = () => {
           onChange={(e) => {
             if (e.target.files) {
               handleFiles(Array.from(e.target.files));
+              e.target.value = '';
+            }
+          }}
+        />
+        <input
+          type="file"
+          ref={folderInputRef}
+          className="hidden"
+          webkitdirectory=""
+          onChange={(e) => {
+            if (e.target.files) {
+              const heicFiles = Array.from(e.target.files).filter(file => 
+                file.name.toLowerCase().endsWith('.heic') || 
+                file.name.toLowerCase().endsWith('.heif')
+              );
+              handleFiles(heicFiles);
               e.target.value = '';
             }
           }}
@@ -138,15 +194,28 @@ const HeicConverter = () => {
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={handleUploadClick}
           disabled={isConverting}
         >
           <div className="flex flex-col items-center gap-2">
             <div className="flex items-center gap-3">
-              <Upload className="w-6 h-6" />
-              <span>{isDragging ? "Drop Images Here" : "Upload or Drop Images"}</span>
+              {selectionMode === 'folder' ? (
+                <FolderOpen className="w-6 h-6" />
+              ) : (
+                <Upload className="w-6 h-6" />
+              )}
+              <span>
+                {isDragging 
+                  ? "Drop Here" 
+                  : selectionMode === 'folder' 
+                    ? "Select HEIC/HEIF Folder" 
+                    : "Upload or Drop Images"
+                }
+              </span>
             </div>
-            <span className="text-sm text-muted-foreground">Max {MAX_FILES} images at once</span>
+            {selectionMode === 'image' && (
+              <span className="text-sm text-muted-foreground">Max {MAX_FILES} images at once</span>
+            )}
           </div>
         </Button>
 
