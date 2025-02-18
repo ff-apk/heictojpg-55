@@ -26,6 +26,14 @@ const HeicConverter = () => {
     (localStorage.getItem('heic-selection-mode') as 'image' | 'folder') || 'image'
   );
 
+  // Effect to set directory attributes on the folder input
+  useEffect(() => {
+    if (folderInputRef.current) {
+      folderInputRef.current.setAttribute("directory", "");
+      folderInputRef.current.setAttribute("webkitdirectory", "");
+    }
+  }, []);
+
   const {
     images,
     isDragging,
@@ -170,8 +178,6 @@ const HeicConverter = () => {
           type="file"
           ref={folderInputRef}
           className="hidden"
-          webkitdirectory={true}
-          directory={true}
           onChange={(e) => {
             if (e.target.files) {
               const heicFiles = Array.from(e.target.files).filter(file => 
