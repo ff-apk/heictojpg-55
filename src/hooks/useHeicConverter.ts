@@ -21,7 +21,8 @@ const getConversionMessage = (count: number, format: string, quality: number, in
   if (format === 'png') {
     return `Successfully ${actionVerb} ${count} image${pluralSuffix} to PNG`;
   }
-  return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${quality}`;
+  const formattedQuality = quality.toFixed(2);
+  return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${formattedQuality}`;
 };
 
 const getConversionStartMessage = (trigger: ConversionTrigger) => {
@@ -94,7 +95,7 @@ export const useHeicConverter = () => {
           }
 
           const finalFormat = targetFormat || format;
-          const finalQuality = targetQuality ?? qualities[finalFormat];
+          const finalQuality = finalFormat === 'png' ? 0.95 : (targetQuality ?? qualities[finalFormat]);
 
           const imageResult = await convertHeicToFormat(
             file,
@@ -159,7 +160,8 @@ export const useHeicConverter = () => {
 
   const handleReconversion = async (newQuality?: number, trigger: ConversionTrigger = 'quality', targetFormat?: ImageFormat) => {
     const finalFormat = targetFormat || format;
-    const finalQuality = finalFormat === 'png' ? 0.95 : newQuality;
+    // Ensure we always have a valid quality value
+    const finalQuality = finalFormat === 'png' ? 0.95 : (newQuality ?? qualities[finalFormat]);
     
     cleanupObjectURLs();
     const currentImages = images.map(img => ({
@@ -185,7 +187,7 @@ export const useHeicConverter = () => {
 
       toast({
         title: "Conversion complete",
-        description: getConversionMessage(currentImages.length, finalFormat, finalQuality || 0.95, hasNonHeic),
+        description: getConversionMessage(currentImages.length, finalFormat, finalQuality, hasNonHeic),
       });
     } catch (error) {
       console.error('Unexpected error during conversion:', error);
