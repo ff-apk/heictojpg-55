@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import ExifDataDialog from "./ExifDataDialog";
 
 const HeicConverter = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -405,10 +404,15 @@ const HeicConverter = () => {
                   <Download className="w-5 h-5" />
                   Download
                 </Button>
-                <ExifDataDialog 
-                  exifData={image.exifData}
-                  fileName={image.fileName}
-                />
+                <Button 
+                  onClick={() => handleExifData(image.id)}
+                  variant="outline"
+                  className="gap-2"
+                  disabled={!image.convertedBlob}
+                >
+                  <Info className="w-5 h-5" />
+                  Exif Data
+                </Button>
               </div>
             </div>
             {index < images.length - 1 && <Separator className="my-6" />}

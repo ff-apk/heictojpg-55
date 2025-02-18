@@ -1,10 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
 import { isHeicOrHeif, getNewFileName } from "@/utils/heicConverterUtils";
 import { convertHeicToFormat } from "@/services/heicConversionService";
 import { MAX_FILES } from "@/constants/upload";
-import * as exifr from 'exifr';
 
 interface Qualities {
   [key: string]: number;
@@ -15,17 +15,14 @@ type ConversionTrigger = 'format' | 'quality';
 const CHUNK_SIZE = 2;
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
-const formatQuality = (quality: number): string => {
-  return Number(quality.toFixed(2)).toString();
-};
-
 const getConversionMessage = (count: number, format: string, quality: number, includesNonHeic: boolean) => {
   const pluralSuffix = count > 1 ? 's' : '';
   const actionVerb = includesNonHeic ? 'processed' : 'converted';
   if (format === 'png') {
     return `Successfully ${actionVerb} ${count} image${pluralSuffix} to PNG`;
   }
-  return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${formatQuality(quality)}`;
+  const formattedQuality = quality.toFixed(2);
+  return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${formattedQuality}`;
 };
 
 const getConversionStartMessage = (trigger: ConversionTrigger) => {
@@ -163,6 +160,7 @@ export const useHeicConverter = () => {
 
   const handleReconversion = async (newQuality?: number, trigger: ConversionTrigger = 'quality', targetFormat?: ImageFormat) => {
     const finalFormat = targetFormat || format;
+    // Ensure we always have a valid quality value
     const finalQuality = finalFormat === 'png' ? 0.95 : (newQuality ?? qualities[finalFormat]);
     
     cleanupObjectURLs();
@@ -273,34 +271,10 @@ export const useHeicConverter = () => {
   };
 
   const handleExifData = async (imageId: string) => {
-    const image = images.find(img => img.id === imageId);
-    if (!image) return;
-
-    try {
-      const exifData = await exifr.parse(image.originalFile);
-      if (!exifData) {
-        toast({
-          title: "Not found",
-          description: "The file has no Exif data",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setImages(prev => prev.map(img => {
-        if (img.id === imageId) {
-          return { ...img, exifData };
-        }
-        return img;
-      }));
-    } catch (error) {
-      console.error('Error extracting EXIF data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to extract EXIF data",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Coming Soon",
+      description: "EXIF data extraction will be implemented soon",
+    });
   };
 
   const downloadImage = async (imageId: string) => {
@@ -412,12 +386,14 @@ export const useHeicConverter = () => {
     setQuality: (newQuality: number) => {
       if (format === 'png') return;
       
+      // First update the local state
       setQualities(prev => ({
         ...prev,
         [format]: newQuality
       }));
       localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
       
+      // Then immediately start reconversion with the new quality
       if (images.length > 0) {
         setIsConverting(true);
         handleReconversion(newQuality, 'quality');
