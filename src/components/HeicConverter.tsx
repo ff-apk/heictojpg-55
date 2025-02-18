@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -249,7 +250,9 @@ const HeicConverter = () => {
                 </span>
               </div>
               {selectionMode === 'image' && (
-                <span className="text-sm text-muted-foreground">Max {MAX_FILES} images at once</span>
+                <span className="text-sm text-muted-foreground opacity-60 transition-opacity duration-200">
+                  Max {MAX_FILES} images at once
+                </span>
               )}
             </div>
           </Button>
