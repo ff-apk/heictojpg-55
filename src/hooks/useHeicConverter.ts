@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -68,7 +69,11 @@ export const useHeicConverter = () => {
     };
   }, []);
 
-  const processImagesSequentially = async (files: File[], targetFormat?: ImageFormat) => {
+  const processImagesSequentially = async (
+    files: File[], 
+    targetFormat?: ImageFormat,
+    targetQuality?: number
+  ) => {
     const totalCount = files.length;
     setTotalImages(totalCount);
     setConvertedCount(0);
@@ -88,10 +93,13 @@ export const useHeicConverter = () => {
             throw new Error(`File ${file.name} is too large (max ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
           }
 
+          const finalFormat = targetFormat || format;
+          const finalQuality = targetQuality ?? qualities[finalFormat];
+
           const imageResult = await convertHeicToFormat(
             file,
-            targetFormat || format,
-            qualities[targetFormat || format],
+            finalFormat,
+            finalQuality,
             (fileProgress) => {
               const mappedProgress = currentProgress + (fileProgress * incrementPerImage / 100);
               setProgress(Math.min(mappedProgress, 100));
@@ -104,7 +112,7 @@ export const useHeicConverter = () => {
             id: Math.random().toString(36).substr(2, 9),
             originalFile: file,
             previewUrl: imageResult.previewUrl,
-            fileName: getNewFileName(file.name, targetFormat || format),
+            fileName: getNewFileName(file.name, finalFormat),
             exifData: null,
             convertedBlob: imageResult.blob,
             progress: 100,
@@ -150,7 +158,8 @@ export const useHeicConverter = () => {
   };
 
   const handleReconversion = async (newQuality?: number, trigger: ConversionTrigger = 'quality', targetFormat?: ImageFormat) => {
-    const currentQuality = targetFormat === 'png' ? 0.95 : (newQuality ?? qualities[targetFormat || format]);
+    const finalFormat = targetFormat || format;
+    const finalQuality = finalFormat === 'png' ? 0.95 : newQuality;
     
     cleanupObjectURLs();
     const currentImages = images.map(img => ({
@@ -170,12 +179,13 @@ export const useHeicConverter = () => {
     try {
       const hasNonHeic = await processImagesSequentially(
         currentImages.map(img => img.originalFile),
-        targetFormat
+        finalFormat,
+        finalQuality
       );
 
       toast({
         title: "Conversion complete",
-        description: getConversionMessage(currentImages.length, targetFormat || format, currentQuality, hasNonHeic),
+        description: getConversionMessage(currentImages.length, finalFormat, finalQuality || 0.95, hasNonHeic),
       });
     } catch (error) {
       console.error('Unexpected error during conversion:', error);
@@ -373,11 +383,15 @@ export const useHeicConverter = () => {
     },
     setQuality: (newQuality: number) => {
       if (format === 'png') return;
+      
+      // First update the local state
       setQualities(prev => ({
         ...prev,
         [format]: newQuality
       }));
       localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
+      
+      // Then immediately start reconversion with the new quality
       if (images.length > 0) {
         setIsConverting(true);
         handleReconversion(newQuality, 'quality');
