@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -30,13 +31,6 @@ const HeicConverter = () => {
   const [qualityInput, setQualityInput] = useState("");
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (folderInputRef.current) {
-      folderInputRef.current.setAttribute("directory", "");
-      folderInputRef.current.setAttribute("webkitdirectory", "");
-    }
-  }, []);
-
   const {
     images,
     isDragging,
@@ -55,7 +49,6 @@ const HeicConverter = () => {
     handleDragEnter,
     handleDragLeave,
     handleDrop,
-    handleExifData,
     downloadImage,
     reset,
     openImageInNewTab,
@@ -65,8 +58,15 @@ const HeicConverter = () => {
   } = useHeicConverter();
 
   useEffect(() => {
+    if (folderInputRef.current) {
+      folderInputRef.current.setAttribute("directory", "");
+      folderInputRef.current.setAttribute("webkitdirectory", "");
+    }
+  }, []);
+
+  useEffect(() => {
     setQualityInput(quality.toString());
-  }, [format, quality]);
+  }, [quality]);
 
   const handleModeChange = (value: string) => {
     if (value) {
