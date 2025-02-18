@@ -170,8 +170,8 @@ const HeicConverter = () => {
           type="file"
           ref={folderInputRef}
           className="hidden"
-          webkitdirectory=""
-          directory=""
+          webkitdirectory={true}
+          directory={true}
           onChange={(e) => {
             if (e.target.files) {
               const heicFiles = Array.from(e.target.files).filter(file => 
