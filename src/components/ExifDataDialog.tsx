@@ -13,17 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const ORIENTATION_MAP: { [key: number]: string } = {
-  1: "Normal",
-  2: "Flip Horizontal",
-  3: "Rotate 180",
-  4: "Flip Vertical",
-  5: "Flip Horizontal and Rotate 270 CW/left-bottom",
-  6: "Rotate 90 CW/right-top",
-  7: "Flip Horizontal and Rotate 90 CW/right-bottom",
-  8: "Rotate 270 CW/left-top"
-};
-
 interface ExifDataDialogProps {
   originalFile: File;
   fileName: string;
@@ -63,10 +52,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     }
   };
 
-  const formatExifValue = (key: string, value: any): string => {
-    if (key === "Orientation" && typeof value === "number") {
-      return `${value} - ${ORIENTATION_MAP[value] || value}`;
-    }
+  const formatExifValue = (value: any): string => {
     if (value instanceof Date) {
       return value.toLocaleString();
     }
@@ -105,7 +91,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
                     {key}
                   </div>
                   <div className="text-sm">
-                    {formatExifValue(key, value)}
+                    {formatExifValue(value)}
                   </div>
                 </React.Fragment>
               ))}
