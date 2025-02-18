@@ -15,15 +15,13 @@ type ConversionTrigger = 'format' | 'quality';
 const CHUNK_SIZE = 2;
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
-const formatQuality = (quality: number): string => {
-  return Number(quality.toFixed(2)).toString();
-};
 const getConversionMessage = (count: number, format: string, quality: number, includesNonHeic: boolean) => {
   const pluralSuffix = count > 1 ? 's' : '';
   const actionVerb = includesNonHeic ? 'processed' : 'converted';
   if (format === 'png') {
     return `Successfully ${actionVerb} ${count} image${pluralSuffix} to PNG`;
   }
+  const formattedQuality = quality.toFixed(2);
   return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${formattedQuality}`;
 };
 
