@@ -1,7 +1,6 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Download, Info, RefreshCcw, Pencil } from "lucide-react";
+import { Upload, Download, Info, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
 import { useHeicConverter } from "@/hooks/useHeicConverter";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -75,7 +74,6 @@ const HeicConverter = () => {
 
   const handleQualityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
-    // Allow more flexible input during typing
     if (value === '' || value === '.' || value.match(/^\d*\.?\d{0,2}$/)) {
       setQualityInput(value);
     }
@@ -88,7 +86,6 @@ const HeicConverter = () => {
     } else if (numValue > 1) {
       numValue = 1;
     }
-    // Round to 2 decimal places
     numValue = Math.round(numValue * 100) / 100;
     setQualityInput(numValue.toString());
     setQuality(numValue);
