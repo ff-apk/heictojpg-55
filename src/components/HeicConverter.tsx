@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -249,11 +248,9 @@ const HeicConverter = () => {
                   }
                 </span>
               </div>
-              {selectionMode === 'image' && (
-                <span className="text-sm text-muted-foreground opacity-60 transition-opacity duration-200">
-                  Max {MAX_FILES} images at once
-                </span>
-              )}
+              <span className="text-sm text-muted-foreground opacity-60 transition-opacity duration-200">
+                Max {MAX_FILES} images at once
+              </span>
             </div>
           </Button>
         </div>
@@ -343,9 +340,9 @@ const HeicConverter = () => {
                 className={cn(
                   "border border-border rounded-lg overflow-hidden cursor-pointer",
                   "hover:border-primary transition-colors duration-200",
-                  isConverting && "opacity-50 pointer-events-none"
+                  !image.convertedBlob && "opacity-50"
                 )}
-                onClick={() => openImageInNewTab(image.id)}
+                onClick={() => image.convertedBlob && openImageInNewTab(image.id)}
                 title="Click to open in new tab"
               >
                 <img src={image.previewUrl} alt={image.fileName} className="w-full h-auto" />
@@ -384,6 +381,7 @@ const HeicConverter = () => {
                         onClick={() => handleEditStart(image.id, image.fileName)}
                         className="p-1 hover:bg-secondary rounded-sm transition-colors"
                         title="Rename file"
+                        disabled={!image.convertedBlob}
                       >
                         <Pencil className="w-4 h-4 text-muted-foreground" />
                       </button>
@@ -401,7 +399,7 @@ const HeicConverter = () => {
                 <Button 
                   onClick={() => downloadImage(image.id)}
                   className="gap-2"
-                  disabled={isConverting}
+                  disabled={!image.convertedBlob}
                 >
                   <Download className="w-5 h-5" />
                   Download
@@ -410,7 +408,7 @@ const HeicConverter = () => {
                   onClick={() => handleExifData(image.id)}
                   variant="outline"
                   className="gap-2"
-                  disabled={isConverting}
+                  disabled={!image.convertedBlob}
                 >
                   <Info className="w-5 h-5" />
                   Exif Data
