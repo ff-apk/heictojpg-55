@@ -27,7 +27,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
   const handleExifDataClick = async () => {
     setLoading(true);
     try {
-      const data = await parse(originalFile, { readable: true });
+      const data = await parse(originalFile);
       if (!data || Object.keys(data).length === 0) {
         toast({
           title: "Not found",

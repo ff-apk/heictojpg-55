@@ -58,6 +58,14 @@ export const useHeicConverter = () => {
   const { toast } = useToast();
   const quality = qualities[format];
 
+  const setQuality = (newQuality: number) => {
+    setQualities(prev => ({
+      ...prev,
+      [format]: newQuality
+    }));
+    localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
+  };
+
   const cleanupObjectURLs = () => {
     images.forEach(image => {
       if (image.previewUrl) {

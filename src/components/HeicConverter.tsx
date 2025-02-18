@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Download, Info, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
+import { Upload, Download, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
 import { useHeicConverter } from "@/hooks/useHeicConverter";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -26,6 +26,8 @@ const HeicConverter = () => {
   const [selectionMode, setSelectionMode] = useState<'image' | 'folder'>(() => 
     (localStorage.getItem('heic-selection-mode') as 'image' | 'folder') || 'image'
   );
+  const [editingName, setEditingName] = useState("");
+  const [qualityInput, setQualityInput] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,9 +63,6 @@ const HeicConverter = () => {
     cancelEditing,
     handleRename,
   } = useHeicConverter();
-
-  const [editingName, setEditingName] = useState("");
-  const [qualityInput, setQualityInput] = useState(quality.toString());
 
   useEffect(() => {
     setQualityInput(quality.toString());
