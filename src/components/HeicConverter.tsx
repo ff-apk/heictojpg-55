@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -28,7 +27,6 @@ const HeicConverter = () => {
   );
   const { toast } = useToast();
 
-  // Effect to set directory attributes on the folder input
   useEffect(() => {
     if (folderInputRef.current) {
       folderInputRef.current.setAttribute("directory", "");
@@ -152,11 +150,25 @@ const HeicConverter = () => {
             onValueChange={handleModeChange}
             className="flex gap-2"
           >
-            <ToggleGroupItem value="image" aria-label="Image Mode" className="flex items-center gap-2">
+            <ToggleGroupItem 
+              value="image" 
+              aria-label="Image Mode" 
+              className={cn(
+                "flex items-center gap-2 transition-opacity duration-200",
+                selectionMode !== 'image' && "opacity-50"
+              )}
+            >
               <ImageIcon className="w-4 h-4" />
               Image Mode
             </ToggleGroupItem>
-            <ToggleGroupItem value="folder" aria-label="Folder Mode" className="flex items-center gap-2">
+            <ToggleGroupItem 
+              value="folder" 
+              aria-label="Folder Mode" 
+              className={cn(
+                "flex items-center gap-2 transition-opacity duration-200",
+                selectionMode !== 'folder' && "opacity-50"
+              )}
+            >
               <FolderOpen className="w-4 h-4" />
               Folder Mode
             </ToggleGroupItem>
@@ -195,7 +207,7 @@ const HeicConverter = () => {
                     title: "Note",
                     description: `${excludedCount} non HEIC/HEIF ${excludedCount === 1 ? 'image' : 'images'} ignored`,
                   });
-                }, 500); // Small delay to ensure this appears after conversion starts
+                }, 500);
               }
               
               handleFiles(heicFiles);
@@ -204,42 +216,44 @@ const HeicConverter = () => {
           }}
         />
 
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full py-8 text-lg gap-3 relative",
-            "border-2 border-dashed",
-            isDragging ? "border-primary bg-primary/5" : "border-border",
-            "transition-colors duration-200"
-          )}
-          onDragOver={handleDragOver}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={handleUploadClick}
-          disabled={isConverting}
-        >
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-3">
-              {selectionMode === 'folder' ? (
-                <FolderOpen className="w-6 h-6" />
-              ) : (
-                <Upload className="w-6 h-6" />
-              )}
-              <span>
-                {isDragging 
-                  ? "Drop Here" 
-                  : selectionMode === 'folder' 
-                    ? "Select HEIC/HEIF Folder" 
-                    : "Upload or Drop Images"
-                }
-              </span>
-            </div>
-            {selectionMode === 'image' && (
-              <span className="text-sm text-muted-foreground">Max {MAX_FILES} images at once</span>
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full md:w-[600px] lg:w-[800px] py-8 text-lg gap-3 relative",
+              "border-2 border-dashed",
+              isDragging ? "border-primary bg-primary/5" : "border-border",
+              "transition-colors duration-200"
             )}
-          </div>
-        </Button>
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={handleUploadClick}
+            disabled={isConverting}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-3">
+                {selectionMode === 'folder' ? (
+                  <FolderOpen className="w-6 h-6" />
+                ) : (
+                  <Upload className="w-6 h-6" />
+                )}
+                <span>
+                  {isDragging 
+                    ? "Drop Here" 
+                    : selectionMode === 'folder' 
+                      ? "Select Album/Folder" 
+                      : "Upload or Drop Images"
+                  }
+                </span>
+              </div>
+              {selectionMode === 'image' && (
+                <span className="text-sm text-muted-foreground">Max {MAX_FILES} images at once</span>
+              )}
+            </div>
+          </Button>
+        </div>
 
         <div className="space-y-4">
           {format !== 'png' && (
