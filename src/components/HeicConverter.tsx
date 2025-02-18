@@ -9,6 +9,7 @@ import { MAX_FILES } from "@/constants/upload";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,7 @@ const HeicConverter = () => {
   const [selectionMode, setSelectionMode] = useState<'image' | 'folder'>(() => 
     (localStorage.getItem('heic-selection-mode') as 'image' | 'folder') || 'image'
   );
+  const { toast } = useToast();
 
   // Effect to set directory attributes on the folder input
   useEffect(() => {
@@ -180,10 +182,22 @@ const HeicConverter = () => {
           className="hidden"
           onChange={(e) => {
             if (e.target.files) {
-              const heicFiles = Array.from(e.target.files).filter(file => 
+              const allFiles = Array.from(e.target.files);
+              const heicFiles = allFiles.filter(file => 
                 file.name.toLowerCase().endsWith('.heic') || 
                 file.name.toLowerCase().endsWith('.heif')
               );
+              const excludedCount = allFiles.length - heicFiles.length;
+              
+              if (excludedCount > 0) {
+                setTimeout(() => {
+                  toast({
+                    title: "Note",
+                    description: `${excludedCount} non HEIC/HEIF ${excludedCount === 1 ? 'image' : 'images'} ignored`,
+                  });
+                }, 500); // Small delay to ensure this appears after conversion starts
+              }
+              
               handleFiles(heicFiles);
               e.target.value = '';
             }
