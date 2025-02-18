@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, Info, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -170,6 +171,7 @@ const HeicConverter = () => {
           ref={folderInputRef}
           className="hidden"
           webkitdirectory=""
+          directory=""
           onChange={(e) => {
             if (e.target.files) {
               const heicFiles = Array.from(e.target.files).filter(file => 
