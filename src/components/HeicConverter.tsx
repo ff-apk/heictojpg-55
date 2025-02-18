@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
+import { ExifDataDialog } from "@/components/ExifDataDialog";
 import {
   Select,
   SelectContent,
@@ -404,15 +405,10 @@ const HeicConverter = () => {
                   <Download className="w-5 h-5" />
                   Download
                 </Button>
-                <Button 
-                  onClick={() => handleExifData(image.id)}
-                  variant="outline"
-                  className="gap-2"
-                  disabled={!image.convertedBlob}
-                >
-                  <Info className="w-5 h-5" />
-                  Exif Data
-                </Button>
+                <ExifDataDialog 
+                  originalFile={image.originalFile}
+                  fileName={image.originalFile.name}
+                />
               </div>
             </div>
             {index < images.length - 1 && <Separator className="my-6" />}

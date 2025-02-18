@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -163,7 +162,6 @@ export const useHeicConverter = () => {
 
   const handleReconversion = async (newQuality?: number, trigger: ConversionTrigger = 'quality', targetFormat?: ImageFormat) => {
     const finalFormat = targetFormat || format;
-    // Ensure we always have a valid quality value
     const finalQuality = finalFormat === 'png' ? 0.95 : (newQuality ?? qualities[finalFormat]);
     
     cleanupObjectURLs();
@@ -273,13 +271,6 @@ export const useHeicConverter = () => {
     await handleFiles(items);
   };
 
-  const handleExifData = async (imageId: string) => {
-    toast({
-      title: "Coming Soon",
-      description: "EXIF data extraction will be implemented soon",
-    });
-  };
-
   const downloadImage = async (imageId: string) => {
     const image = images.find(img => img.id === imageId);
     if (!image || !image.convertedBlob) return;
@@ -377,37 +368,13 @@ export const useHeicConverter = () => {
     showProgress,
     totalImages,
     convertedCount,
-    setFormat: (newFormat: ImageFormat) => {
-      if (newFormat === format) return;
-      localStorage.setItem('heic-convert-format', newFormat);
-      setFormat(newFormat);
-      if (images.length > 0) {
-        setIsConverting(true);
-        handleReconversion(undefined, 'format', newFormat);
-      }
-    },
-    setQuality: (newQuality: number) => {
-      if (format === 'png') return;
-      
-      // First update the local state
-      setQualities(prev => ({
-        ...prev,
-        [format]: newQuality
-      }));
-      localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
-      
-      // Then immediately start reconversion with the new quality
-      if (images.length > 0) {
-        setIsConverting(true);
-        handleReconversion(newQuality, 'quality');
-      }
-    },
+    setFormat,
+    setQuality,
     handleFiles,
     handleDragOver,
     handleDragEnter,
     handleDragLeave,
     handleDrop,
-    handleExifData,
     downloadImage,
     reset,
     openImageInNewTab,
