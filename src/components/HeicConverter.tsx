@@ -175,12 +175,10 @@ const HeicConverter = () => {
     handleFiles(heicFiles);
 
     if (excludedByType > 0) {
-      setTimeout(() => {
         toast({
           title: "Note",
           description: `${excludedByType} non HEIC/HEIF ${excludedByType === 1 ? 'image was' : 'images were'} ignored`,
         });
-      }, 500);
     }
   };
 
@@ -237,12 +235,10 @@ const HeicConverter = () => {
               const excludedCount = allFiles.length - heicFiles.length;
               
               if (excludedCount > 0) {
-                setTimeout(() => {
                   toast({
                     title: "Note",
                     description: `${excludedCount} non HEIC/HEIF ${excludedCount === 1 ? 'image was' : 'images were'} ignored`,
                   });
-                }, 500);
               }
               
               handleFiles(heicFiles);
