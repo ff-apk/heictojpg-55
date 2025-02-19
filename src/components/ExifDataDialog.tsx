@@ -55,7 +55,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
       if (Object.keys(formattedTags).length === 0) {
         toast({
           title: "Not found",
-          description: "The file has no Exif data",
+          description: "The image has no EXIF data",
           variant: "destructive",
         });
         setOpen(false);
@@ -67,8 +67,8 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     } catch (error) {
       console.error('Error reading EXIF data:', error);
       toast({
-        title: "Error",
-        description: "Failed to read EXIF data",
+        title: "Not found",
+        description: "The image has no EXIF data",
         variant: "destructive",
       });
       setOpen(false);
