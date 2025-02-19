@@ -159,7 +159,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
         </Button>
       </DialogTrigger>
       {exifData && (
-        <DialogContent className="max-w-3xl max-h-[80vh]">
+        <DialogContent className="sm:max-w-3xl w-11/12 max-h-[80vh] rounded-xl">
           <DialogHeader>
             <DialogTitle>EXIF Data for {fileName}</DialogTitle>
           </DialogHeader>
