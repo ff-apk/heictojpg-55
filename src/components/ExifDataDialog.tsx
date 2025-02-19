@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { parse } from "exifr";
+import ExifReader from "exifreader";
 import {
   Dialog,
   DialogContent,
@@ -18,17 +18,28 @@ interface ExifDataDialogProps {
   fileName: string;
 }
 
+interface ExifTag {
+  value: any;
+  description?: string;
+}
+
+interface ExifTags {
+  [key: string]: ExifTag;
+}
+
 export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [exifData, setExifData] = useState<Record<string, any> | null>(null);
+  const [exifData, setExifData] = useState<ExifTags | null>(null);
   const { toast } = useToast();
 
   const handleExifDataClick = async () => {
     setLoading(true);
     try {
-      const data = await parse(originalFile);
-      if (!data || Object.keys(data).length === 0) {
+      const arrayBuffer = await originalFile.arrayBuffer();
+      const tags = await ExifReader.load(arrayBuffer, { expanded: true });
+      
+      if (!tags || Object.keys(tags).length === 0) {
         toast({
           title: "Not found",
           description: "The file has no Exif data",
@@ -37,7 +48,8 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
         setOpen(false);
         return;
       }
-      setExifData(data);
+      
+      setExifData(tags);
       setOpen(true);
     } catch (error) {
       console.error('Error reading EXIF data:', error);
@@ -52,17 +64,36 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     }
   };
 
-  const formatExifValue = (value: any): string => {
-    if (value instanceof Date) {
-      return value.toLocaleString();
+  const formatExifValue = (tag: ExifTag): string => {
+    if (tag.description) {
+      return tag.description;
     }
+    
+    const value = tag.value;
+    
     if (Array.isArray(value)) {
       return value.join(", ");
     }
-    if (typeof value === "number") {
-      return value.toString();
+    
+    if (value instanceof Date) {
+      return value.toLocaleString();
     }
+    
+    if (typeof value === "object" && value !== null) {
+      return JSON.stringify(value);
+    }
+    
     return String(value);
+  };
+
+  const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
+    return Object.entries(tags).filter(([key, value]) => {
+      // Filter out undefined or null values
+      if (!value || !value.value) return false;
+      // Filter out internal ExifReader properties
+      if (key.startsWith('_')) return false;
+      return true;
+    });
   };
 
   return (
@@ -85,13 +116,13 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
           </DialogHeader>
           <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
             <div className="grid grid-cols-2 gap-4">
-              {Object.entries(exifData).map(([key, value]) => (
+              {filterExifData(exifData).map(([key, tag]) => (
                 <React.Fragment key={key}>
                   <div className="font-medium text-sm text-muted-foreground">
                     {key}
                   </div>
                   <div className="text-sm">
-                    {formatExifValue(value)}
+                    {formatExifValue(tag)}
                   </div>
                 </React.Fragment>
               ))}
