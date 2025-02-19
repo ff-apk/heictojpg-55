@@ -213,8 +213,7 @@ export const useHeicConverter = () => {
   const handleFiles = async (files: File[]) => {
     const allFiles = Array.from(files);
     const filesToProcess = allFiles.slice(0, MAX_FILES);
-    const excludedFiles = allFiles.slice(MAX_FILES);
-    const excludedCount = excludedFiles.length;
+    const excludedCount = allFiles.length - filesToProcess.length;
 
     setIsConverting(true);
     cleanupObjectURLs();

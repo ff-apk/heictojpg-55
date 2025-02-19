@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -148,7 +149,7 @@ const HeicConverter = () => {
 
     const allFiles = Array.from(selectedFiles);
     const heicFiles = allFiles.filter(isHeicHeif);
-    const excludedCount = allFiles.length - heicFiles.length;
+    const excludedByType = allFiles.length - heicFiles.length;
 
     if (heicFiles.length === 0) {
       toast({
@@ -159,14 +160,13 @@ const HeicConverter = () => {
       return;
     }
 
-    const filesToProcess = heicFiles.slice(0, MAX_FILES);
-    handleFiles(filesToProcess);
+    handleFiles(heicFiles);
 
-    if (excludedCount > 0) {
+    if (excludedByType > 0) {
       setTimeout(() => {
         toast({
           title: "Note",
-          description: `${excludedCount} non HEIC/HEIF ${excludedCount === 1 ? 'image was' : 'images were'} ignored`,
+          description: `${excludedByType} non HEIC/HEIF ${excludedByType === 1 ? 'image was' : 'images were'} ignored`,
         });
       }, 500);
     }
