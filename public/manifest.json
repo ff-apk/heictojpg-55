@@ -1,7 +1,7 @@
 {
-  "short_name": "Clipboard to Image",
-  "name": "Clipboard to Image",
-  "description": "Easily download copied clipboard images with our free Clipboard to Image tool.",
+  "short_name": "HEIC to JPG",
+  "name": "HEIC to JPG",
+  "description": "Convert HEIC images to JPG, PNG, or WEBP format online at once with our free converter.",
   "icons": [
     {
       "src": "icon.png",
@@ -13,6 +13,6 @@
   "display": "standalone",
   "theme_color": "#07a36c",
   "background_color": "#ffffff",
-  "categories": ["productivity", "utilities"],
+  "categories": ["photo","productivity", "utilities"],
   "orientation": "portrait"
 }
