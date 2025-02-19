@@ -38,7 +38,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     setLoading(true);
     try {
       const arrayBuffer = await originalFile.arrayBuffer();
-      const tags = await ExifReader.load(arrayBuffer, { expanded: true });
+      const tags = await ExifReader.load(arrayBuffer);
       
       // Flatten tags from all groups into a single object
       const formattedTags: ExifTags = {};
