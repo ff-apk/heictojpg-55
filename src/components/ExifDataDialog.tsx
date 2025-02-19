@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import ExifReader from "exifreader";
@@ -9,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Info } from "lucide-react";
+import { Info, Copy } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ExifDataDialogProps {
@@ -102,6 +103,32 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     });
   };
 
+  const formatExifDataForCopy = (data: [string, ExifTag][]): string => {
+    return data
+      .map(([key, tag]) => `${key}: ${formatExifValue(tag)}`)
+      .join('\n');
+  };
+
+  const handleCopyClick = async () => {
+    if (!exifData) return;
+    
+    const formattedData = formatExifDataForCopy(filterExifData(exifData));
+    
+    try {
+      await navigator.clipboard.writeText(formattedData);
+      toast({
+        title: "Copied",
+        description: "EXIF data copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy EXIF data",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -134,6 +161,16 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
               ))}
             </div>
           </ScrollArea>
+          <div className="flex justify-center mt-4">
+            <Button
+              onClick={handleCopyClick}
+              variant="outline"
+              className="gap-2"
+            >
+              <Copy className="w-4 h-4" />
+              Copy EXIF Data
+            </Button>
+          </div>
         </DialogContent>
       )}
     </Dialog>
