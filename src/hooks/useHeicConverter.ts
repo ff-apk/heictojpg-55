@@ -303,5 +303,6 @@ export const useHeicConverter = () => {
     startEditing,
     cancelEditing,
     handleRename,
+    handleReconversion,
   };
 };
