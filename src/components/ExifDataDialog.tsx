@@ -143,11 +143,6 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
-    toast({
-      title: "Saved",
-      description: "EXIF data saved as JSON file",
-    });
   };
 
   return (
@@ -168,7 +163,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
           <DialogHeader>
             <DialogTitle>EXIF Data for {fileName}</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
+          <ScrollArea className="h-[60vh] md:h-[40vh] sm:h-[40vh] w-full rounded-md border p-4">
             <div className="grid grid-cols-2 gap-4">
               {filterExifData(exifData).map(([key, tag]) => (
                 <React.Fragment key={key}>
@@ -189,7 +184,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
               className="gap-2"
             >
               <Copy className="w-4 h-4" />
-              Copy EXIF Data
+              Copy EXIF
             </Button>
             <Button
               onClick={handleSaveJson}
