@@ -20,15 +20,13 @@ interface ExifDataDialogProps {
 type ExifValue = string | number | Date | Array<any> | { [key: string]: any };
 
 interface ExifTag {
-  value?: ExifValue;
+  value: ExifValue;
   description?: string;
-  // There might be additional properties (e.g. attributes) in some cases.
-  [key: string]: any;
 }
 
 type ExifTags = {
   [key: string]: ExifTag;
-};
+}
 
 export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) {
   const [open, setOpen] = useState(false);
@@ -36,38 +34,23 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
   const [exifData, setExifData] = useState<ExifTags | null>(null);
   const { toast } = useToast();
 
-  // This helper will flatten the returned EXIF data.
-  // If the returned object is already flat (each property has a "value"), we return it as is.
-  // Otherwise, we loop over the groups and extract each tag.
-  const flattenTags = (tags: any): ExifTags => {
-    const formattedTags: ExifTags = {};
-    const values = Object.values(tags);
-    if (values.length && typeof values[0] === "object" && "value" in values[0]) {
-      // The tags object is already flat.
-      return tags;
-    } else {
-      // The tags are grouped. Loop over each group.
+  const handleExifDataClick = async () => {
+    setLoading(true);
+    try {
+      const arrayBuffer = await originalFile.arrayBuffer();
+      const tags = await ExifReader.load(arrayBuffer, { expanded: true });
+      
+      // Flatten tags from all groups into a single object
+      const formattedTags: ExifTags = {};
       Object.values(tags).forEach((group) => {
-        if (group && typeof group === "object") {
+        if (typeof group === 'object' && group !== null) {
           Object.entries(group).forEach(([tagKey, tagValue]) => {
-            if (tagValue && typeof tagValue === "object") {
+            if (tagValue && typeof tagValue === 'object') {
               formattedTags[tagKey] = tagValue as ExifTag;
             }
           });
         }
       });
-      return formattedTags;
-    }
-  };
-
-  const handleExifDataClick = async () => {
-    setLoading(true);
-    try {
-      const arrayBuffer = await originalFile.arrayBuffer();
-      // Do not pass expanded:true so that computed values are returned.
-      const tags = await ExifReader.load(arrayBuffer);
-
-      const formattedTags = flattenTags(tags);
 
       if (Object.keys(formattedTags).length === 0) {
         toast({
@@ -82,7 +65,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
       setExifData(formattedTags);
       setOpen(true);
     } catch (error) {
-      console.error("Error reading EXIF data:", error);
+      console.error('Error reading EXIF data:', error);
       toast({
         title: "Not found",
         description: "The image has no EXIF data",
@@ -94,7 +77,6 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     }
   };
 
-  // Returns the computed description (if available) or the value.
   const formatExifValue = (tag: ExifTag): string => {
     if (tag.description) return tag.description;
     
@@ -110,13 +92,13 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
       return JSON.stringify(tag.value);
     }
     
-    return tag.value !== undefined ? String(tag.value) : "";
+    return String(tag.value);
   };
 
-  // Filter out any internal properties.
   const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
     return Object.entries(tags).filter(([key, value]) => {
-      return !key.startsWith("_") && value !== undefined && value !== null;
+      // Filter out internal ExifReader properties and undefined/null values
+      return !key.startsWith('_') && value !== undefined && value !== null;
     });
   };
 
