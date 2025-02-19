@@ -30,25 +30,25 @@ type ExifTags = {
 
 // Orientation mappings (numeric values and description-based)
 const orientationMapping: Record<number, string> = {
-  1: "Normal",
-  2: "Flip Horizontal",
-  3: "Rotate 180",
-  4: "Flip Vertical",
-  5: "Transpose (Flip Horizontal & Rotate 270° CW / Left-Bottom)",
-  6: "Rotate 90° CW / Right-Top",
-  7: "Transverse (Flip Horizontal & Rotate 90° CW / Right-Bottom)",
-  8: "Rotate 270° CW / Left-Top",
+  1: "Normal (top-left)",
+  2: "Flip Horizontal (top-right)",
+  3: "Rotate 180° (bottom-right)",
+  4: "Flip Vertical (bottom-left)",
+  5: "Transpose (Flip Horizontal & Rotate 270° CW, left-top)",
+  6: "Rotate 90° CW (right-top)",
+  7: "Transverse (Flip Horizontal & Rotate 90° CW, right-bottom)",
+  8: "Rotate 270° CW (left-bottom)",
 };
 
 const orientationMappingByDescription: Record<string, string> = {
-  "top-left": "Normal",
-  "top-right": "Flip Horizontal",
-  "bottom-right": "Rotate 180",
-  "bottom-left": "Flip Vertical",
-  "left-top": "Transpose (Flip Horizontal & Rotate 270° CW / Left-Bottom)",
-  "right-top": "Rotate 90° CW / Right-Top",
-  "right-bottom": "Transverse (Flip Horizontal & Rotate 90° CW / Right-Bottom)",
-  "left-bottom": "Rotate 270° CW / Left-Top",
+  "top-left": "Normal (top-left)",
+  "top-right": "Flip Horizontal (top-right)",
+  "bottom-right": "Rotate 180° (bottom-right)",
+  "bottom-left": "Flip Vertical (bottom-left)",
+  "left-top": "Transpose (Flip Horizontal & Rotate 270° CW, left-top)",
+  "right-top": "Rotate 90° CW (right-top)",
+  "right-bottom": "Transverse (Flip Horizontal & Rotate 90° CW, right-bottom)",
+  "left-bottom": "Rotate 270° CW (left-bottom)",
 };
 
 export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) {
