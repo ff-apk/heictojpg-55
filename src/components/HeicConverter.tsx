@@ -337,7 +337,7 @@ const HeicConverter = () => {
                 )}>
                   <SelectValue placeholder="Select format" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   <SelectItem value="jpg">JPG</SelectItem>
                   <SelectItem value="png">PNG</SelectItem>
                   <SelectItem value="webp">WEBP</SelectItem>
