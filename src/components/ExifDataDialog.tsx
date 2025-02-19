@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import ExifReader from "exifreader";
@@ -34,86 +33,6 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
   const [loading, setLoading] = useState(false);
   const [exifData, setExifData] = useState<ExifTags | null>(null);
   const { toast } = useToast();
-
-  const convertDMSToDD = (dms: number[], isNegative: boolean): string => {
-    const degrees = dms[0];
-    const minutes = dms[1];
-    const seconds = dms[2];
-    let dd = degrees + (minutes / 60) + (seconds / 3600);
-    if (isNegative) dd *= -1;
-    return dd.toFixed(6);
-  };
-
-  const formatGPSCoordinate = (tags: ExifTags, type: 'Latitude' | 'Longitude'): string => {
-    const coord = tags[`GPS${type}`]?.value;
-    const ref = tags[`GPS${type}Ref`]?.value;
-    
-    if (Array.isArray(coord)) {
-      const isNegative = type === 'Latitude' ? ref === 'S' : ref === 'W';
-      return convertDMSToDD(coord, isNegative);
-    }
-    return 'Unknown';
-  };
-
-  const formatGPSValue = (key: string, tag: ExifTag, tags: ExifTags): string => {
-    switch (key) {
-      case 'GPSLatitude':
-        return `${formatGPSCoordinate(tags, 'Latitude')}° ${tags.GPSLatitudeRef?.value || 'N'}`;
-      case 'GPSLongitude':
-        return `${formatGPSCoordinate(tags, 'Longitude')}° ${tags.GPSLongitudeRef?.value || 'E'}`;
-      case 'GPSAltitude':
-        if (typeof tag.value === 'number') {
-          const ref = tags.GPSAltitudeRef?.value;
-          const altitude = tag.value.toFixed(2);
-          return `${ref === 1 ? '-' : ''}${altitude} meters`;
-        }
-        break;
-      case 'GPSTimeStamp':
-        if (Array.isArray(tag.value)) {
-          return tag.value
-            .map(v => typeof v === 'number' ? v.toString().padStart(2, '0') : '00')
-            .join(':');
-        }
-        break;
-      case 'GPSImgDirection':
-      case 'GPSDestBearing':
-        if (typeof tag.value === 'number') {
-          return `${tag.value.toFixed(2)}°`;
-        }
-        break;
-    }
-    return formatExifValue(tag);
-  };
-
-  const formatExifValue = (tag: ExifTag): string => {
-    if (tag.description) {
-      return tag.description;
-    }
-    
-    if (Array.isArray(tag.value)) {
-      return tag.value.join(", ");
-    }
-    
-    if (tag.value instanceof Date) {
-      return tag.value.toLocaleString();
-    }
-    
-    if (typeof tag.value === "object" && tag.value !== null) {
-      return JSON.stringify(tag.value);
-    }
-    
-    return String(tag.value);
-  };
-
-  const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
-    return Object.entries(tags).filter(([key, value]) => {
-      if (!value || !value.value) return false;
-      if (key.startsWith('_')) return false;
-      // Skip GPS reference tags as they're used in coordinate formatting
-      if (key === 'GPSLatitudeRef' || key === 'GPSLongitudeRef' || key === 'GPSAltitudeRef') return false;
-      return true;
-    });
-  };
 
   const handleExifDataClick = async () => {
     setLoading(true);
@@ -158,6 +77,31 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     }
   };
 
+  const formatExifValue = (tag: ExifTag): string => {
+    if (tag.description) return tag.description;
+    
+    if (Array.isArray(tag.value)) {
+      return tag.value.join(", ");
+    }
+    
+    if (tag.value instanceof Date) {
+      return tag.value.toLocaleString();
+    }
+    
+    if (typeof tag.value === "object" && tag.value !== null) {
+      return JSON.stringify(tag.value);
+    }
+    
+    return String(tag.value);
+  };
+
+  const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
+    return Object.entries(tags).filter(([key, value]) => {
+      // Filter out internal ExifReader properties and undefined/null values
+      return !key.startsWith('_') && value !== undefined && value !== null;
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -184,7 +128,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
                     {key}
                   </div>
                   <div className="text-sm">
-                    {formatGPSValue(key, tag, exifData)}
+                    {formatExifValue(tag)}
                   </div>
                 </React.Fragment>
               ))}
