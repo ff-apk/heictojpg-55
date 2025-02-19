@@ -163,7 +163,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
           <DialogHeader>
             <DialogTitle>EXIF Data for {fileName}</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="h-[50vh] w-full rounded-md border p-4">
+          <ScrollArea className="h-[50vh] w-full rounded-md border p-4 bg-gray-100 dark:bg-gray-900">
             <div className="grid grid-cols-2 gap-4">
               {filterExifData(exifData).map(([key, tag]) => (
                 <React.Fragment key={key}>
