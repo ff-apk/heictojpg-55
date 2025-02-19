@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import ExifReader from "exifreader";
+import ExifReader, { Tags } from "exifreader";
 import {
   Dialog,
   DialogContent,
@@ -18,12 +18,14 @@ interface ExifDataDialogProps {
   fileName: string;
 }
 
+type ExifValue = string | number | Date | Array<any> | { [key: string]: any };
+
 interface ExifTag {
-  value: any;
+  value: ExifValue;
   description?: string;
 }
 
-interface ExifTags {
+type ExifTags = {
   [key: string]: ExifTag;
 }
 
@@ -49,7 +51,15 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
         return;
       }
       
-      setExifData(tags);
+      // Convert ExpandedTags to our ExifTags type
+      const formattedTags: ExifTags = Object.entries(tags).reduce((acc, [key, value]) => {
+        if (value && typeof value === 'object') {
+          acc[key] = value as ExifTag;
+        }
+        return acc;
+      }, {} as ExifTags);
+      
+      setExifData(formattedTags);
       setOpen(true);
     } catch (error) {
       console.error('Error reading EXIF data:', error);
