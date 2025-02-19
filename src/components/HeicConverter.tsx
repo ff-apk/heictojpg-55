@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -55,6 +54,7 @@ const HeicConverter = () => {
     startEditing,
     cancelEditing,
     handleRename,
+    handleReconversion,
   } = useHeicConverter();
 
   useEffect(() => {
@@ -67,6 +67,12 @@ const HeicConverter = () => {
   useEffect(() => {
     setQualityInput(quality.toString());
   }, [quality]);
+
+  useEffect(() => {
+    if (images.length > 0) {
+      handleReconversion(undefined, 'format', format);
+    }
+  }, [format]);
 
   const handleModeChange = (value: string) => {
     if (value) {
@@ -120,6 +126,9 @@ const HeicConverter = () => {
     numValue = Math.round(numValue * 100) / 100;
     setQualityInput(numValue.toString());
     setQuality(numValue);
+    if (images.length > 0) {
+      handleReconversion(numValue);
+    }
   };
 
   const handleSliderChange = (value: number[]) => {
@@ -130,6 +139,9 @@ const HeicConverter = () => {
   const handleSliderCommit = (value: number[]) => {
     const newQuality = value[0];
     setQuality(newQuality);
+    if (images.length > 0) {
+      handleReconversion(newQuality);
+    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -150,7 +162,7 @@ const HeicConverter = () => {
     const allFiles = Array.from(selectedFiles);
     const heicFiles = allFiles.filter(isHeicHeif);
     const excludedByType = allFiles.length - heicFiles.length;
-
+    
     if (heicFiles.length === 0) {
       toast({
         title: "Invalid files",
@@ -312,7 +324,9 @@ const HeicConverter = () => {
             }`}>
               <Select 
                 value={format} 
-                onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
+                onValueChange={(value: "jpg" | "png" | "webp") => {
+                  setFormat(value);
+                }}
                 disabled={isConverting}
                 open={isFormatSelectOpen}
                 onOpenChange={setIsFormatSelectOpen}
