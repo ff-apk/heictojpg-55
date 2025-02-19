@@ -26,7 +26,30 @@ interface ExifTag {
 
 type ExifTags = {
   [key: string]: ExifTag;
-}
+};
+
+// Orientation mappings (numeric values and description-based)
+const orientationMapping: Record<number, string> = {
+  1: "Normal",
+  2: "Flip Horizontal",
+  3: "Rotate 180",
+  4: "Flip Vertical",
+  5: "Transpose (Flip Horizontal & Rotate 270° CW / Left-Bottom)",
+  6: "Rotate 90° CW / Right-Top",
+  7: "Transverse (Flip Horizontal & Rotate 90° CW / Right-Bottom)",
+  8: "Rotate 270° CW / Left-Top",
+};
+
+const orientationMappingByDescription: Record<string, string> = {
+  "top-left": "Normal",
+  "top-right": "Flip Horizontal",
+  "bottom-right": "Rotate 180",
+  "bottom-left": "Flip Vertical",
+  "left-top": "Transpose (Flip Horizontal & Rotate 270° CW / Left-Bottom)",
+  "right-top": "Rotate 90° CW / Right-Top",
+  "right-bottom": "Transverse (Flip Horizontal & Rotate 90° CW / Right-Bottom)",
+  "left-bottom": "Rotate 270° CW / Left-Top",
+};
 
 export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) {
   const [open, setOpen] = useState(false);
@@ -35,105 +58,75 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
   const { toast } = useToast();
 
   const handleExifDataClick = async () => {
-  setLoading(true);
-  try {
-    const arrayBuffer = await originalFile.arrayBuffer();
-    const tags = await ExifReader.load(arrayBuffer, { expanded: true });
-    
-    // Flatten tags from all groups into a single object
-    const formattedTags: ExifTags = {};
-    Object.values(tags).forEach((group) => {
-      if (typeof group === "object" && group !== null) {
-        Object.entries(group).forEach(([tagKey, tagValue]) => {
-          if (tagValue && typeof tagValue === "object") {
-            formattedTags[tagKey] = tagValue as ExifTag;
-          }
+    setLoading(true);
+    try {
+      const arrayBuffer = await originalFile.arrayBuffer();
+      const tags = await ExifReader.load(arrayBuffer, { expanded: true });
+      
+      // Flatten tags from all groups into a single object
+      const formattedTags: ExifTags = {};
+      Object.values(tags).forEach((group) => {
+        if (typeof group === "object" && group !== null) {
+          Object.entries(group).forEach(([tagKey, tagValue]) => {
+            if (tagValue && typeof tagValue === "object") {
+              formattedTags[tagKey] = tagValue as ExifTag;
+            }
+          });
+        }
+      });
+
+      if (Object.keys(formattedTags).length === 0) {
+        toast({
+          title: "Not found",
+          description: "The file has no Exif data",
+          variant: "destructive",
         });
+        setOpen(false);
+        return;
       }
-    });
-
-    // Override Orientation description with custom rotation details if available
-    if (formattedTags["Orientation"]) {
-      const orientationValue = formattedTags["Orientation"].value;
-      let customOrientation = "";
-      switch (orientationValue) {
-  case 1:
-    friendlyDescription = "Normal (top-left)";
-    break;
-  case 2:
-    friendlyDescription = "Flip Horizontal (top-right)";
-    break;
-  case 3:
-    friendlyDescription = "Rotate 180° (bottom-right)";
-    break;
-  case 4:
-    friendlyDescription = "Flip Vertical (bottom-left)";
-    break;
-  case 5:
-    friendlyDescription = "Transpose (Flip Horizontal & Rotate 270° CW, left-top)";
-    break;
-  case 6:
-    friendlyDescription = "Rotate 90° CW (right-top)";
-    break;
-  case 7:
-    friendlyDescription = "Transverse (Flip Horizontal & Rotate 90° CW, right-bottom)";
-    break;
-  case 8:
-    friendlyDescription = "Rotate 270° CW (left-bottom)";
-    break;
-  default:
-    friendlyDescription = "Undefined";
-}
-      formattedTags["Orientation"].description = customOrientation;
-    }
-
-    if (Object.keys(formattedTags).length === 0) {
+      
+      setExifData(formattedTags);
+      setOpen(true);
+    } catch (error) {
+      console.error("Error reading EXIF data:", error);
       toast({
-        title: "Not found",
-        description: "The file has no Exif data",
+        title: "Error",
+        description: "Failed to read EXIF data",
         variant: "destructive",
       });
       setOpen(false);
-      return;
+    } finally {
+      setLoading(false);
     }
-    
-    setExifData(formattedTags);
-    setOpen(true);
-  } catch (error) {
-    console.error("Error reading EXIF data:", error);
-    toast({
-      title: "Error",
-      description: "Failed to read EXIF data",
-      variant: "destructive",
-    });
-    setOpen(false);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-  const formatExifValue = (tag: ExifTag): string => {
+  // Formatter that handles Orientation specifically
+  const formatExifValue = (tag: ExifTag, tagKey?: string): string => {
+    if (tagKey === "Orientation") {
+      // Try numeric mapping first
+      const numericOrientation = Number(tag.value);
+      if (!isNaN(numericOrientation) && orientationMapping[numericOrientation]) {
+        return orientationMapping[numericOrientation];
+      }
+      // Fallback to description mapping if available
+      if (tag.description && orientationMappingByDescription[tag.description.toLowerCase()]) {
+        return orientationMappingByDescription[tag.description.toLowerCase()];
+      }
+    }
+    
+    // Default formatting for other tags
     if (tag.description) return tag.description;
-    
-    if (Array.isArray(tag.value)) {
-      return tag.value.join(", ");
-    }
-    
-    if (tag.value instanceof Date) {
-      return tag.value.toLocaleString();
-    }
-    
-    if (typeof tag.value === "object" && tag.value !== null) {
-      return JSON.stringify(tag.value);
-    }
+    if (Array.isArray(tag.value)) return tag.value.join(", ");
+    if (tag.value instanceof Date) return tag.value.toLocaleString();
+    if (typeof tag.value === "object" && tag.value !== null) return JSON.stringify(tag.value);
     
     return String(tag.value);
   };
 
+  // Filter out any internal properties or null/undefined values
   const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
     return Object.entries(tags).filter(([key, value]) => {
-      // Filter out internal ExifReader properties and undefined/null values
-      return !key.startsWith('_') && value !== undefined && value !== null;
+      return !key.startsWith("_") && value !== undefined && value !== null;
     });
   };
 
@@ -163,7 +156,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
                     {key}
                   </div>
                   <div className="text-sm">
-                    {formatExifValue(tag)}
+                    {formatExifValue(tag, key)}
                   </div>
                 </React.Fragment>
               ))}
