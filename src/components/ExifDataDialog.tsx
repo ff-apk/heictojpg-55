@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import ExifReader from "exifreader";
@@ -10,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Info, Copy } from "lucide-react";
+import { Info, Copy, Download } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ExifDataDialogProps {
@@ -41,7 +40,6 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
       const arrayBuffer = await originalFile.arrayBuffer();
       const tags = await ExifReader.load(arrayBuffer, { expanded: true });
       
-      // Flatten tags from all groups into a single object
       const formattedTags: ExifTags = {};
       Object.values(tags).forEach((group) => {
         if (typeof group === 'object' && group !== null) {
@@ -98,7 +96,6 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
 
   const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
     return Object.entries(tags).filter(([key, value]) => {
-      // Filter out internal ExifReader properties and undefined/null values
       return !key.startsWith('_') && value !== undefined && value !== null;
     });
   };
@@ -127,6 +124,30 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
         variant: "destructive",
       });
     }
+  };
+
+  const handleSaveJson = () => {
+    if (!exifData) return;
+    
+    const jsonData = filterExifData(exifData).reduce((acc, [key, tag]) => ({
+      ...acc,
+      [key]: formatExifValue(tag)
+    }), {});
+
+    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileName.replace(/\.[^/.]+$/, '')}_exif.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Saved",
+      description: "EXIF data saved as JSON file",
+    });
   };
 
   return (
@@ -161,7 +182,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
               ))}
             </div>
           </ScrollArea>
-          <div className="flex justify-center mt-4">
+          <div className="flex justify-center gap-2 mt-4">
             <Button
               onClick={handleCopyClick}
               variant="outline"
@@ -169,6 +190,14 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
             >
               <Copy className="w-4 h-4" />
               Copy EXIF Data
+            </Button>
+            <Button
+              onClick={handleSaveJson}
+              variant="outline"
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Save as JSON
             </Button>
           </div>
         </DialogContent>
