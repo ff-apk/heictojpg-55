@@ -13,6 +13,6 @@
   "display": "standalone",
   "theme_color": "#07a36c",
   "background_color": "#ffffff",
-  "categories": ["photo","productivity", "utilities"],
+  "categories": ["photo", "productivity", "utilities"],
   "orientation": "portrait"
 }
