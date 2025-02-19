@@ -31,23 +31,23 @@ type ExifTags = {
 // Orientation mappings (numeric values and description-based)
 const orientationMapping: Record<number, string> = {
   1: "Normal (top-left)",
-  2: "Flip Horizontal (top-right)",
+  2: "Flip / Mirror Horizontal (top-right)",
   3: "Rotate 180° (bottom-right)",
-  4: "Flip Vertical (bottom-left)",
-  5: "Transpose (Flip Horizontal & Rotate 270° CW, left-top)",
+  4: "Flip / Mirror Vertical (bottom-left)",
+  5: "Transpose (Flip / Mirror Horizontal & Rotate 270° CW, left-top)",
   6: "Rotate 90° CW (right-top)",
-  7: "Transverse (Flip Horizontal & Rotate 90° CW, right-bottom)",
+  7: "Transverse (Flip / Mirror Horizontal & Rotate 90° CW, right-bottom)",
   8: "Rotate 270° CW (left-bottom)",
 };
 
 const orientationMappingByDescription: Record<string, string> = {
   "top-left": "Normal (top-left)",
-  "top-right": "Flip Horizontal (top-right)",
+  "top-right": "Flip / Mirror Horizontal (top-right)",
   "bottom-right": "Rotate 180° (bottom-right)",
-  "bottom-left": "Flip Vertical (bottom-left)",
-  "left-top": "Transpose (Flip Horizontal & Rotate 270° CW, left-top)",
+  "bottom-left": "Flip / Mirror Vertical (bottom-left)",
+  "left-top": "Transpose (Flip / Mirror Horizontal & Rotate 270° CW, left-top)",
   "right-top": "Rotate 90° CW (right-top)",
-  "right-bottom": "Transverse (Flip Horizontal & Rotate 90° CW, right-bottom)",
+  "right-bottom": "Transverse (Flip / Mirror Horizontal & Rotate 90° CW, right-bottom)",
   "left-bottom": "Rotate 270° CW (left-bottom)",
 };
 
