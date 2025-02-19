@@ -190,7 +190,7 @@ export const useHeicConverter = () => {
 
       toast({
         title: "Conversion complete",
-        description: getConversionMessage(currentImages.length, finalFormat, finalQuality, hasNonHeic),
+        description: getConversionMessage(currentImages.length, finalFormat, finalQuality, hasNonHeic, trigger),
       });
     } catch (error) {
       console.error('Unexpected error during conversion:', error);

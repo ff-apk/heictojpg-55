@@ -6,12 +6,28 @@ export const formatQuality = (quality: number): string => {
   return Number(quality.toFixed(2)).toString();
 };
 
-export const getConversionMessage = (count: number, format: string, quality: number, includesNonHeic: boolean) => {
+export const getConversionMessage = (
+  count: number, 
+  format: string, 
+  quality: number, 
+  includesNonHeic: boolean,
+  trigger: ConversionTrigger
+) => {
   const pluralSuffix = count > 1 ? 's' : '';
   const actionVerb = includesNonHeic ? 'processed' : 'converted';
+  
   if (format === 'png') {
     return `Successfully ${actionVerb} ${count} image${pluralSuffix} to PNG`;
   }
+  
+  if (trigger === 'format') {
+    return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()}`;
+  }
+  
+  if (trigger === 'quality') {
+    return `Successfully ${actionVerb} ${count} image${pluralSuffix} with quality ${formatQuality(quality)}`;
+  }
+  
   return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${formatQuality(quality)}`;
 };
 
