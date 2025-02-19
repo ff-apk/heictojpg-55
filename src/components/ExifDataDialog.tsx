@@ -38,9 +38,8 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     setLoading(true);
     try {
       const arrayBuffer = await originalFile.arrayBuffer();
-      // Removed expanded: true option so computed values are returned
-      const tags = await ExifReader.load(arrayBuffer);
-
+      const tags = await ExifReader.load(arrayBuffer, { expanded: true });
+      
       // Flatten tags from all groups into a single object
       const formattedTags: ExifTags = {};
       Object.values(tags).forEach((group) => {
@@ -66,7 +65,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
       setExifData(formattedTags);
       setOpen(true);
     } catch (error) {
-      console.error("Error reading EXIF data:", error);
+      console.error('Error reading EXIF data:', error);
       toast({
         title: "Not found",
         description: "The image has no EXIF data",
@@ -99,7 +98,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
   const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
     return Object.entries(tags).filter(([key, value]) => {
       // Filter out internal ExifReader properties and undefined/null values
-      return !key.startsWith("_") && value !== undefined && value !== null;
+      return !key.startsWith('_') && value !== undefined && value !== null;
     });
   };
 
