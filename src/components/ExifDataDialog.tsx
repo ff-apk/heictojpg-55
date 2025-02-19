@@ -40,22 +40,27 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
       const arrayBuffer = await originalFile.arrayBuffer();
       const tags = await ExifReader.load(arrayBuffer, { expanded: true });
       
-      // Flatten tags from all groups into a single object
+      // Process only 'exif' and 'gps' groups for Exif data
       const formattedTags: ExifTags = {};
-      Object.values(tags).forEach((group) => {
-        if (typeof group === 'object' && group !== null) {
-          Object.entries(group).forEach(([tagKey, tagValue]) => {
-            if (tagValue && typeof tagValue === 'object') {
-              formattedTags[tagKey] = tagValue as ExifTag;
-            }
-          });
-        }
-      });
+      if (tags.exif) {
+        Object.entries(tags.exif).forEach(([tagKey, tagValue]) => {
+          if (tagValue && typeof tagValue === 'object') {
+            formattedTags[tagKey] = tagValue as ExifTag;
+          }
+        });
+      }
+      if (tags.gps) {
+        Object.entries(tags.gps).forEach(([tagKey, tagValue]) => {
+          if (tagValue && typeof tagValue === 'object') {
+            formattedTags[tagKey] = tagValue as ExifTag;
+          }
+        });
+      }
 
       if (Object.keys(formattedTags).length === 0) {
         toast({
           title: "Not found",
-          description: "The file has no Exif data",
+          description: "The image has no EXIF data.",
           variant: "destructive",
         });
         setOpen(false);
@@ -97,7 +102,6 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
 
   const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
     return Object.entries(tags).filter(([key, value]) => {
-      // Filter out internal ExifReader properties and undefined/null values
       return !key.startsWith('_') && value !== undefined && value !== null;
     });
   };
