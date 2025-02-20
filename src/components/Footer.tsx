@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Info, MessageSquare } from "lucide-react";
+import { Home, Info, MessageSquare, Shield } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 
 const Footer = () => {
@@ -9,6 +9,7 @@ const Footer = () => {
   const isHomePage = location.pathname === "/";
   const isAboutPage = location.pathname === "/about";
   const isFeedbackPage = location.pathname === "/feedback";
+  const isPrivacyPage = location.pathname === "/privacy";
 
   return (
     <footer className="mt-8 space-y-8">
@@ -33,6 +34,12 @@ const Footer = () => {
           <Link to="/feedback" className="inline-flex items-center gap-2 text-foreground hover:text-primary whitespace-nowrap">
             <MessageSquare className="h-4 w-4" />
             Feedback
+          </Link>
+        )}
+        {!isPrivacyPage && (
+          <Link to="/privacy" className="inline-flex items-center gap-2 text-foreground hover:text-primary whitespace-nowrap">
+            <Shield className="h-4 w-4" />
+            Privacy
           </Link>
         )}
       </nav>
