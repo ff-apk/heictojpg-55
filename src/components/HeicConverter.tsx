@@ -454,7 +454,7 @@ const HeicConverter = () => {
                       </p>
                       <button
                         onClick={() => handleEditStart(image.id, image.fileName)}
-                        className="p-1 hover:bg-[#062b1f] dark:hover:bg-[#e6f5ef] rounded-sm transition-colors"
+                        className="p-1 hover:bg-[#e6f5ef] dark:hover:bg-[#062b1f] rounded-sm transition-colors"
                         title="Rename file"
                         disabled={!image.convertedBlob}
                       >
