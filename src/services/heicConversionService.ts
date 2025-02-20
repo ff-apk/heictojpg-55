@@ -1,7 +1,9 @@
 
 import { heicTo } from "heic-to";
 import { ImageFormat } from "@/types/heicConverter";
-import { convertPngToWebp, processRegularImage } from "@/utils/heicConverterUtils";
+import { convertPngToWebp, processRegularImage, processInChunks } from "@/utils/heicConverterUtils";
+
+const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
 
 export const convertHeicToFormat = async (
   file: File, 
@@ -12,37 +14,58 @@ export const convertHeicToFormat = async (
   try {
     let convertedBlob: Blob;
 
-    try {
+    const processChunk = async (chunk: ArrayBuffer): Promise<Blob> => {
+      const chunkBlob = new Blob([chunk]);
+      
       if (targetFormat === 'webp') {
-        // First convert to PNG using heic-to
         const pngBlob = await heicTo({
-          blob: file,
+          blob: chunkBlob,
           type: 'image/png',
           quality: 1
         });
-        onProgress?.(50);
-
-        // Then convert PNG to WebP using existing utility with the specified quality
-        convertedBlob = await convertPngToWebp(pngBlob, quality);
-        onProgress?.(90);
+        return convertPngToWebp(pngBlob, quality);
       } else {
-        // Direct conversion to JPG or PNG
-        convertedBlob = await heicTo({
-          blob: file,
+        return heicTo({
+          blob: chunkBlob,
           type: targetFormat === 'jpg' ? 'image/jpeg' : 'image/png',
           quality: quality
         });
-        onProgress?.(90);
+      }
+    };
+
+    try {
+      // Read file in chunks
+      const fileBuffer = await file.arrayBuffer();
+      const chunks: ArrayBuffer[] = [];
+      
+      for (let i = 0; i < fileBuffer.byteLength; i += CHUNK_SIZE) {
+        chunks.push(fileBuffer.slice(i, i + CHUNK_SIZE));
       }
 
+      let processedChunks: Blob[] = [];
+      await processInChunks(
+        chunks,
+        2, // Process 2 chunks at a time
+        async (chunk) => {
+          const processedChunk = await processChunk(chunk);
+          processedChunks.push(processedChunk);
+        },
+        onProgress
+      );
+
+      // Combine processed chunks
+      convertedBlob = new Blob(processedChunks, { 
+        type: targetFormat === 'jpg' ? 'image/jpeg' : 
+              targetFormat === 'webp' ? 'image/webp' : 
+              'image/png' 
+      });
+
       const previewUrl = URL.createObjectURL(convertedBlob);
-      onProgress?.(100);
       return { blob: convertedBlob, previewUrl, isHeic: true };
     } catch (error) {
       console.log('HEIC conversion failed, trying as regular image:', error);
       // If heic-to conversion fails, try processing as regular image
       const result = await processRegularImage(file, targetFormat, quality);
-      onProgress?.(100);
       return { ...result, isHeic: false };
     }
   } catch (error) {
@@ -50,3 +73,4 @@ export const convertHeicToFormat = async (
     throw error;
   }
 };
+

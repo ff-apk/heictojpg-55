@@ -21,74 +21,93 @@ export const processRegularImage = async (
   quality: number = 1
 ): Promise<{ blob: Blob, previewUrl: string }> => {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        reject(new Error('Could not get canvas context'));
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0);
-      
-      // Set the MIME type based on target format
-      const mimeType = targetFormat === 'jpg' 
-        ? 'image/jpeg' 
-        : targetFormat === 'webp' 
-          ? 'image/webp' 
-          : 'image/png';
-      
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            const previewUrl = URL.createObjectURL(blob);
-            resolve({ blob, previewUrl });
-          } else {
-            reject(new Error(`Failed to convert to ${targetFormat.toUpperCase()}`));
-          }
-        },
-        mimeType,
-        quality
-      );
+    const createImageBitmap = async (file: File): Promise<ImageBitmap> => {
+      const buffer = await file.arrayBuffer();
+      return window.createImageBitmap(new Blob([buffer]));
     };
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = URL.createObjectURL(file);
+
+    createImageBitmap(file)
+      .then(bitmap => {
+        // Create an offscreen canvas for better memory management
+        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        ctx.drawImage(bitmap, 0, 0);
+        bitmap.close(); // Release bitmap memory
+
+        const mimeType = targetFormat === 'jpg' 
+          ? 'image/jpeg' 
+          : targetFormat === 'webp' 
+            ? 'image/webp' 
+            : 'image/png';
+
+        canvas.convertToBlob({
+          type: mimeType,
+          quality: quality
+        }).then(blob => {
+          const previewUrl = URL.createObjectURL(blob);
+          resolve({ blob, previewUrl });
+        }).catch(reject);
+      })
+      .catch(reject);
   });
 };
 
 export const convertPngToWebp = async (pngBlob: Blob, quality: number = 1): Promise<Blob> => {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        reject(new Error('Could not get canvas context'));
-        return;
-      }
+    createImageBitmap(pngBlob)
+      .then(bitmap => {
+        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
 
-      ctx.drawImage(img, 0, 0);
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to convert to WEBP'));
-          }
-        },
-        'image/webp',
-        quality
-      );
-    };
-    img.onerror = () => reject(new Error('Failed to load PNG image'));
-    img.src = URL.createObjectURL(pngBlob);
+        ctx.drawImage(bitmap, 0, 0);
+        bitmap.close(); // Release bitmap memory
+
+        canvas.convertToBlob({
+          type: 'image/webp',
+          quality: quality
+        }).then(resolve).catch(reject);
+      })
+      .catch(reject);
   });
+};
+
+export const processInChunks = async <T>(
+  items: T[],
+  chunkSize: number,
+  processor: (item: T) => Promise<void>,
+  onProgress?: (progress: number) => void
+): Promise<void> => {
+  const totalItems = items.length;
+  let processedItems = 0;
+
+  for (let i = 0; i < items.length; i += chunkSize) {
+    const chunk = items.slice(i, i + chunkSize);
+    await Promise.all(chunk.map(async (item) => {
+      await processor(item);
+      processedItems++;
+      if (onProgress) {
+        onProgress((processedItems / totalItems) * 100);
+      }
+    }));
+
+    // Force garbage collection if available
+    if (typeof window.gc === 'function') {
+      window.gc();
+    }
+
+    // Small delay between chunks to prevent memory buildup
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
 };
 
