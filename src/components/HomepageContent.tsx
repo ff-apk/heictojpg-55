@@ -90,9 +90,9 @@ const HomepageContent = () => {
             </p>
           </div>
           <div>
-            <h3 className="font-medium mb-2 text-foreground">No File Limits</h3>
+            <h3 className="font-medium mb-2 text-foreground">No Conversion Limits</h3>
             <p>
-              Convert as many HEIC images as you need - there's no daily limit on file numbers and conversion.
+              Convert as many HEIC images as you need - there are no daily or monthly limit on file conversion.
             </p>
           </div>
           <div>
