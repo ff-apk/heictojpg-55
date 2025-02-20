@@ -1,57 +1,50 @@
 
 import React from "react";
-import { FileSearch, Layout, Lightbulb } from "lucide-react";
+import { Shield, FileImage, Layout, Zap, Settings } from "lucide-react";
 
 const HomepageContent = () => {
   return (
     <div className="space-y-12 mt-8">
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold flex items-center gap-2 text-foreground">
-          <FileSearch className="w-6 h-6 text-primary" />
+          <FileImage className="w-6 h-6 text-primary" />
           How It Works
         </h2>
         <div className="space-y-4 text-muted-foreground">
           <p>
-            Simply paste any image from your clipboard using Ctrl+V (Windows) or
-            Cmd+V (Mac). Our tool instantly processes the image locally in your
-            browser, allowing you to download it immediately.
+            Simply drag and drop your HEIC images or select them from your device. Our tool instantly converts them to your chosen format (JPG, PNG, or WEBP) right in your browser - no uploads needed!
           </p>
           <p>
-            All processing happens right in your browser - your images never leave
-            your device, ensuring complete privacy and quick processing times.
+            All processing happens locally on your device, ensuring your photos remain private and secure. Perfect for converting iPhone and iOS photos to widely compatible formats.
           </p>
           <p>
-            Supports various image formats including PNG, JPEG, and other common
-            web formats, making it perfect for quick image conversions and saves.
+            Convert multiple images at once with our batch processing feature, and download them individually or all at once when ready.
           </p>
         </div>
       </div>
 
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold flex items-center gap-2 text-foreground">
-          <Layout className="w-6 h-6 text-primary" />
-          Common Uses
+          <Settings className="w-6 h-6 text-primary" />
+          Key Features
         </h2>
         <div className="grid gap-4 text-muted-foreground">
           <div>
-            <h3 className="font-medium mb-2 text-foreground">Screenshot Sharing</h3>
+            <h3 className="font-medium mb-2 text-foreground">Multiple Format Support</h3>
             <p>
-              Quickly save screenshots from your clipboard for sharing in emails,
-              documents, or presentations.
+              Convert your HEIC images to JPG, PNG, or WEBP format with adjustable quality settings for perfect results.
             </p>
           </div>
           <div>
-            <h3 className="font-medium mb-2 text-foreground">Document Snippets</h3>
+            <h3 className="font-medium mb-2 text-foreground">Batch Processing</h3>
             <p>
-              Capture and save important parts of documents, charts, or diagrams
-              for reference or documentation.
+              Convert multiple HEIC images simultaneously with our efficient batch processing system.
             </p>
           </div>
           <div>
-            <h3 className="font-medium mb-2 text-foreground">Social Media Content</h3>
+            <h3 className="font-medium mb-2 text-foreground">Quality Control</h3>
             <p>
-              Save images from your clipboard for social media posts or content
-              creation without the need for image editing software.
+              Fine-tune your conversion with adjustable quality settings to balance file size and image quality.
             </p>
           </div>
         </div>
@@ -59,29 +52,47 @@ const HomepageContent = () => {
 
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold flex items-center gap-2 text-foreground">
-          <Lightbulb className="w-6 h-6 text-primary" />
-          Tips & Tricks
+          <Shield className="w-6 h-6 text-primary" />
+          Privacy & Security
         </h2>
         <div className="space-y-4 text-muted-foreground">
           <div>
-            <h3 className="font-medium mb-2 text-foreground">Keyboard Shortcuts</h3>
+            <h3 className="font-medium mb-2 text-foreground">100% Local Processing</h3>
             <p>
-              Use Ctrl+V (Windows) or Cmd+V (Mac) to quickly paste images. The tool
-              automatically detects and processes clipboard content.
+              Your images never leave your device - all conversions happen right in your browser for complete privacy and security.
             </p>
           </div>
           <div>
-            <h3 className="font-medium mb-2 text-foreground">Format Support</h3>
+            <h3 className="font-medium mb-2 text-foreground">No Upload Required</h3>
             <p>
-              We support common image formats including PNG and JPEG. Images are
-              saved in their original format to maintain quality.
+              Unlike other converters, we don't need to upload your images to a server. This means faster conversions and guaranteed privacy.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold flex items-center gap-2 text-foreground">
+          <Zap className="w-6 h-6 text-primary" />
+          Performance
+        </h2>
+        <div className="space-y-4 text-muted-foreground">
+          <div>
+            <h3 className="font-medium mb-2 text-foreground">Fast Conversion</h3>
+            <p>
+              Experience quick conversion times with our optimized local processing engine.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-medium mb-2 text-foreground">No File Limits</h3>
+            <p>
+              Convert as many HEIC images as you need - there's no artificial limit on file numbers or sizes.
             </p>
           </div>
           <div>
             <h3 className="font-medium mb-2 text-foreground">Browser Compatibility</h3>
             <p>
-              Works best with modern browsers like Chrome, Firefox, Safari, and
-              Edge. Keep your browser updated for optimal performance.
+              Works seamlessly across all modern browsers including Chrome, Firefox, Safari, and Edge.
             </p>
           </div>
         </div>
@@ -91,4 +102,3 @@ const HomepageContent = () => {
 };
 
 export default HomepageContent;
-

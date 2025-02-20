@@ -13,14 +13,14 @@ const Feedback = () => {
   return (
     <>
       <SEO
-        title="Feedback - Clipboard to Image Converter"
-        description="Share your feedback about our Clipboard to Image converter. Help us improve your image conversion experience."
-        canonicalUrl="https://clipboard-to-image.toolyoulove.com/feedback"
+        title="Feedback - HEIC to JPG Converter"
+        description="Share your feedback about our HEIC to JPG converter. Help us improve your HEIC image conversion experience."
+        canonicalUrl="https://heictojpgpro.com/feedback"
         robots="max-image-preview:large"
-        ogTitle="Feedback - Clipboard to Image Converter"
-        ogDescription="Share your feedback about our Clipboard to Image converter. Help us improve your image conversion experience."
-        ogUrl="https://clipboard-to-image.toolyoulove.com/feedback"
-        ogImage="https://clipboard-to-image.toolyoulove.com/banner.jpg"
+        ogTitle="Feedback - HEIC to JPG Converter"
+        ogDescription="Share your feedback about our HEIC to JPG converter. Help us improve your HEIC image conversion experience."
+        ogUrl="https://heictojpgpro.com/feedback"
+        ogImage="https://heictojpgpro.com/banner.jpg"
         ogType="article"
       />
       <div className="min-h-screen bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8">
@@ -34,7 +34,7 @@ const Feedback = () => {
 
           <div className="space-y-6">
             <p className="text-lg">
-              We value your feedback! Your input helps us improve and provide a better image conversion experience with our Clipboard to Image tool.
+              We value your feedback! Your input helps us improve and provide a better HEIC conversion experience for everyone.
             </p>
 
             <div>
@@ -53,17 +53,18 @@ const Feedback = () => {
             <div>
               <h2 className="text-2xl font-semibold mb-4">What We'd Love to Hear About</h2>
               <ul className="list-disc pl-6 space-y-2">
-                <li>Image conversion quality and performance</li>
-                <li>User interface and experience</li>
+                <li>HEIC conversion quality and performance</li>
+                <li>Output format preferences (JPG, PNG, WEBP)</li>
+                <li>Batch processing experience</li>
+                <li>User interface and ease of use</li>
                 <li>Browser compatibility issues</li>
                 <li>Additional features you'd like to see</li>
                 <li>Any bugs or issues you've encountered</li>
-                <li>Suggestions for improvement</li>
               </ul>
             </div>
 
             <p>
-              Thank you for helping us make Clipboard to Image better for everyone!
+              Thank you for helping us make HEIC to JPG better for everyone!
             </p>
           </div>
           <AdSenseResponsive />
