@@ -48,7 +48,6 @@ const About = () => {
                 <li>Support for JPG, PNG, and WEBP output formats</li>
                 <li>Adjustable quality settings for optimal results</li>
                 <li>Drag-and-drop interface for easy use</li>
-                <li>No file upload limits</li>
                 <li>Preview images before conversion</li>
                 <li>Free to use with no daily or monthly limit.</li>
               </ul>
