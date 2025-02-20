@@ -32,7 +32,7 @@ const HomepageContent = () => {
           <div>
             <h3 className="font-medium mb-2 text-foreground">Multiple Format Support</h3>
             <p>
-              Convert your HEIC images to JPG, PNG, or WEBP format with adjustable quality settings for perfect results.
+              Convert your HEIC/HEIF images to JPG, PNG, or WEBP format with adjustable quality settings for perfect results.
             </p>
           </div>
           <div>
@@ -45,6 +45,12 @@ const HomepageContent = () => {
             <h3 className="font-medium mb-2 text-foreground">Quality Control</h3>
             <p>
               Fine-tune your conversion with adjustable quality settings to balance file size and image quality.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-medium mb-2 text-foreground">EXIF Data</h3>
+            <p>
+              View Exif Data for HEIC images for more in-depth information about the image.
             </p>
           </div>
         </div>
@@ -86,7 +92,7 @@ const HomepageContent = () => {
           <div>
             <h3 className="font-medium mb-2 text-foreground">No File Limits</h3>
             <p>
-              Convert as many HEIC images as you need - there's no artificial limit on file numbers or sizes.
+              Convert as many HEIC images as you need - there's no daily limit on file numbers and conversion.
             </p>
           </div>
           <div>
