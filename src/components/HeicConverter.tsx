@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -25,6 +24,12 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
+const SAMPLE_IMAGES = [
+  { name: 'BledCastle.HEIC', path: '/BledCastle.HEIC' },
+  { name: 'Flower.HEIC', path: '/Flower.HEIC' },
+  { name: 'Sea.heic', path: '/Sea.heic' },
+];
+
 const HeicConverter = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +39,7 @@ const HeicConverter = () => {
   );
   const [editingName, setEditingName] = useState("");
   const [qualityInput, setQualityInput] = useState("");
+  const [showSampleImages, setShowSampleImages] = useState(true);
   const { toast } = useToast();
 
   const {
@@ -208,6 +214,28 @@ const HeicConverter = () => {
     await downloadAllImages(images);
   };
 
+  const handleSampleImageClick = async (sampleImage: { name: string; path: string }) => {
+    try {
+      const response = await fetch(sampleImage.path);
+      const blob = await response.blob();
+      const file = new File([blob], sampleImage.name, { type: 'image/heic' });
+      handleFiles([file]);
+      setShowSampleImages(false);
+    } catch (error) {
+      console.error('Error loading sample image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load sample image",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReset = () => {
+    reset();
+    setShowSampleImages(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
@@ -371,7 +399,7 @@ const HeicConverter = () => {
 
               {images.length > 0 && (
                 <Button 
-                  onClick={reset} 
+                  onClick={handleReset} 
                   variant="outline" 
                   className="w-30 gap-2"
                   disabled={isConverting}
@@ -407,6 +435,30 @@ const HeicConverter = () => {
             </div>
           )}
         </div>
+
+        {showSampleImages && images.length === 0 && (
+          <div className="space-y-4">
+            <p className="text-center text-muted-foreground">Or try one of these:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {SAMPLE_IMAGES.map((image) => (
+                <button
+                  key={image.name}
+                  onClick={() => handleSampleImageClick(image)}
+                  className="group relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors duration-200"
+                >
+                  <img
+                    src={image.path}
+                    alt={image.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                    <p className="text-white text-sm font-medium">{image.name}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
@@ -494,4 +546,3 @@ const HeicConverter = () => {
 };
 
 export default HeicConverter;
-
