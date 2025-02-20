@@ -53,7 +53,6 @@ const HeicConverter = () => {
   const [qualityInput, setQualityInput] = useState("");
   const [showSampleImages, setShowSampleImages] = useState(true);
   const [isLoadingSample, setIsLoadingSample] = useState(false);
-  const [showProgress, setShowProgress] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -64,7 +63,7 @@ const HeicConverter = () => {
     editState,
     quality,
     progress,
-    showProgress: showProgressState,
+    showProgress,
     totalImages,
     convertedCount,
     setFormat,
