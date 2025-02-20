@@ -198,7 +198,7 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
               ))}
             </div>
           </ScrollArea>
-          <div className="flex justify-center gap-2 mt-4">
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
             <Button
               onClick={handleCopyClick}
               variant="outline"
