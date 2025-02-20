@@ -50,7 +50,7 @@ const HomepageContent = () => {
           <div>
             <h3 className="font-medium mb-2 text-foreground">EXIF Data</h3>
             <p>
-              View Exif Data for HEIC images for more in-depth information about the image.
+              View Exif Data for HEIC images to get more in-depth information.
             </p>
           </div>
         </div>
