@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import ExifReader from "exifreader";
@@ -17,14 +18,12 @@ interface ExifDataDialogProps {
   fileName: string;
 }
 
-type ExifValue = string | number | Date | Array<any> | { [key: string]: any };
-
 interface ExifTag {
-  value: ExifValue;
+  value: any;
   description?: string;
 }
 
-type ExifTags = {
+interface ExifTags {
   [key: string]: ExifTag;
 }
 
@@ -40,35 +39,23 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
       const arrayBuffer = await originalFile.arrayBuffer();
       const tags = await ExifReader.load(arrayBuffer, { expanded: true });
       
-      // Flatten tags from all groups into a single object
-      const formattedTags: ExifTags = {};
-      Object.values(tags).forEach((group) => {
-        if (typeof group === 'object' && group !== null) {
-          Object.entries(group).forEach(([tagKey, tagValue]) => {
-            if (tagValue && typeof tagValue === 'object') {
-              formattedTags[tagKey] = tagValue as ExifTag;
-            }
-          });
-        }
-      });
-
-      if (Object.keys(formattedTags).length === 0) {
+      if (!tags || Object.keys(tags).length === 0) {
         toast({
           title: "Not found",
-          description: "The image has no EXIF data",
+          description: "The file has no Exif data",
           variant: "destructive",
         });
         setOpen(false);
         return;
       }
       
-      setExifData(formattedTags);
+      setExifData(tags);
       setOpen(true);
     } catch (error) {
       console.error('Error reading EXIF data:', error);
       toast({
-        title: "Not found",
-        description: "The image has no EXIF data",
+        title: "Error",
+        description: "Failed to read EXIF data",
         variant: "destructive",
       });
       setOpen(false);
@@ -78,27 +65,34 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
   };
 
   const formatExifValue = (tag: ExifTag): string => {
-    if (tag.description) return tag.description;
-    
-    if (Array.isArray(tag.value)) {
-      return tag.value.join(", ");
+    if (tag.description) {
+      return tag.description;
     }
     
-    if (tag.value instanceof Date) {
-      return tag.value.toLocaleString();
+    const value = tag.value;
+    
+    if (Array.isArray(value)) {
+      return value.join(", ");
     }
     
-    if (typeof tag.value === "object" && tag.value !== null) {
-      return JSON.stringify(tag.value);
+    if (value instanceof Date) {
+      return value.toLocaleString();
     }
     
-    return String(tag.value);
+    if (typeof value === "object" && value !== null) {
+      return JSON.stringify(value);
+    }
+    
+    return String(value);
   };
 
   const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
     return Object.entries(tags).filter(([key, value]) => {
-      // Filter out internal ExifReader properties and undefined/null values
-      return !key.startsWith('_') && value !== undefined && value !== null;
+      // Filter out undefined or null values
+      if (!value || !value.value) return false;
+      // Filter out internal ExifReader properties
+      if (key.startsWith('_')) return false;
+      return true;
     });
   };
 

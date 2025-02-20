@@ -213,7 +213,8 @@ export const useHeicConverter = () => {
   const handleFiles = async (files: File[]) => {
     const allFiles = Array.from(files);
     const filesToProcess = allFiles.slice(0, MAX_FILES);
-    const excludedCount = allFiles.length - filesToProcess.length;
+    const excludedFiles = allFiles.slice(MAX_FILES);
+    const excludedCount = excludedFiles.length;
 
     setIsConverting(true);
     cleanupObjectURLs();
@@ -223,11 +224,13 @@ export const useHeicConverter = () => {
       const hasNonHeic = await processImagesSequentially(filesToProcess);
 
       if (excludedCount > 0) {
-        toast({
-          title: `Max upload limit is ${MAX_FILES} at a time`,
-          description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded`,
-          duration: 7000,
-        });
+        setTimeout(() => {
+          toast({
+            title: `Max upload limit is ${MAX_FILES} at a time`,
+            description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded`,
+            duration: 7000,
+          });
+        }, 1000);
       }
     } catch (error) {
       console.error('Unexpected error during processing:', error);
