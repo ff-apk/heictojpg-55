@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
@@ -50,6 +49,11 @@ export const useHeicConverter = () => {
       [format]: newQuality
     }));
     localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
+  };
+
+  const setFormatAndSave = (newFormat: ImageFormat) => {
+    setFormat(newFormat);
+    localStorage.setItem('heic-convert-format', newFormat);
   };
 
   useEffect(() => {
@@ -290,7 +294,7 @@ export const useHeicConverter = () => {
     showProgress,
     totalImages,
     convertedCount,
-    setFormat,
+    setFormat: setFormatAndSave,
     setQuality,
     handleFiles,
     handleDragOver: dragAndDrop.handleDragOver,
