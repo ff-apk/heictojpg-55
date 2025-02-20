@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -10,6 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { ExifDataDialog } from "@/components/ExifDataDialog";
+import {
+  downloadAllImages,
+  downloadImage,
+  openImageInNewTab
+} from "@/utils/fileManagementUtils";
 import {
   Select,
   SelectContent,
