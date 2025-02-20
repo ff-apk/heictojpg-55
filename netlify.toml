@@ -1,10 +1,10 @@
 [[redirects]]
-  from = "https://clipboard-to-image.netlify.app/*"
-  to = "https://clipboard-to-image.toolyoulove.com/:splat"
+  from = "https://heictojpgpro.netlify.app/*"
+  to = "https://heictojpgpro.com/:splat"
   status = 301
   force = true
   
 [[redirects]]
-  from = "https://clipboard-to-image.toolyoulove.com/*"
+  from = "https://heictojpgpro.com/*"
   to = "/index.html"
   status = 200
