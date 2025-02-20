@@ -2,7 +2,6 @@
 import React from "react";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
-import Header from "@/components/Header";
 
 const Privacy = () => {
   return (
@@ -15,7 +14,6 @@ const Privacy = () => {
       />
       <div className="min-h-screen bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto space-y-8">
-          <Header />
           <div className="prose dark:prose-invert max-w-none space-y-6">
             <h1 className="text-3xl font-bold text-center mb-8">Privacy Policy</h1>
             
