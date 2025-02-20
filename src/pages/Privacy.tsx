@@ -190,7 +190,12 @@ const Privacy = () => {
 <h2>Contact Us</h2>
 <p>If you have any questions about this Privacy Policy, You can contact us:</p>
 <ul>
-<li>By email: info@toolyoulove.com</li>
+<li>By email: {" "} <a
+                  href="mailto:info@toolyoulove.com"
+                  className="text-primary hover:underline"
+                >
+                  info@toolyoulove.com
+                </a></li>
 </ul>
 
           </div>
