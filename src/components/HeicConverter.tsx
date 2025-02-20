@@ -336,6 +336,9 @@ const HeicConverter = () => {
                 onValueChange={handleSliderChange}
                 onValueCommit={handleSliderCommit}
                 disabled={isConverting}
+                className={cn(
+  isConverting && "opacity-50"
+)}
               />
             </div>
           )}
