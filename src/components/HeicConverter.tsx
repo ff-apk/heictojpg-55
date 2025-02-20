@@ -344,10 +344,9 @@ const HeicConverter = () => {
           )}
 
           <div className="flex flex-col gap-4">
-            <div className="flex justify-center items-center gap-4">
-              <div className={`transition-all duration-500 ${
-                isFormatSelectOpen ? "mb-32" : "mb-0"
-              }`}>
+              <div className={`transition-all duration-500 flex justify-center items-center gap-4 ${
+  isFormatSelectOpen ? "mb-32" : "mb-0"
+}`}>
                 <Select 
                   value={format} 
                   onValueChange={(value: "jpg" | "png" | "webp") => {
@@ -369,7 +368,6 @@ const HeicConverter = () => {
                     <SelectItem value="webp">WEBP</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
 
               {images.length > 0 && (
                 <Button 
