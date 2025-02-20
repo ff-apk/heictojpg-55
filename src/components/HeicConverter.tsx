@@ -52,6 +52,7 @@ const HeicConverter = () => {
   const [editingName, setEditingName] = useState("");
   const [qualityInput, setQualityInput] = useState("");
   const [showSampleImages, setShowSampleImages] = useState(true);
+  const [isLoadingSample, setIsLoadingSample] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -227,6 +228,14 @@ const HeicConverter = () => {
   };
 
   const handleSampleImageClick = async (sampleImage: { name: string; path: string }) => {
+    if (isLoadingSample) return;
+    
+    setIsLoadingSample(true);
+    toast({
+      title: "Getting image",
+      description: `${sampleImage.name} is loading...`
+    });
+
     try {
       const response = await fetch(sampleImage.path);
       const blob = await response.blob();
@@ -240,6 +249,8 @@ const HeicConverter = () => {
         description: "Failed to load sample image",
         variant: "destructive",
       });
+    } finally {
+      setIsLoadingSample(false);
     }
   };
 
@@ -355,12 +366,16 @@ const HeicConverter = () => {
         {showSampleImages && images.length === 0 && (
           <div className="space-y-4">
             <p className="text-center text-muted-foreground">Or try one of these:</p>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {SAMPLE_IMAGES.map((image) => (
                 <button
                   key={image.name}
                   onClick={() => handleSampleImageClick(image)}
-                  className="group relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors duration-200"
+                  disabled={isLoadingSample}
+                  className={cn(
+                    "group relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-all duration-200",
+                    isLoadingSample && "opacity-50 cursor-not-allowed"
+                  )}
                 >
                   <img
                     src={image.preview}
