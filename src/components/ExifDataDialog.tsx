@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import ExifReader from "exifreader";
@@ -9,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Info, Copy, Download } from "lucide-react";
+import { Info, Copy, Download, MapPin } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ExifDataDialogProps {
@@ -145,6 +146,26 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
     URL.revokeObjectURL(url);
   };
 
+  const handleLocationClick = () => {
+    if (!exifData) return;
+    
+    const latitude = exifData.GPSLatitude?.description || exifData.GPSLatitude?.value;
+    const longitude = exifData.GPSLongitude?.description || exifData.GPSLongitude?.value;
+    
+    if (latitude && longitude) {
+      const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      window.open(url, '_blank');
+    } else {
+      toast({
+        title: "Location not found",
+        description: "This image does not contain GPS coordinates",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const hasLocation = exifData && (exifData.GPSLatitude || exifData.GPSLongitude);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -194,6 +215,16 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
               <Download className="w-4 h-4" />
               Save as JSON
             </Button>
+            {hasLocation && (
+              <Button
+                onClick={handleLocationClick}
+                variant="outline"
+                className="gap-2"
+              >
+                <MapPin className="w-4 h-4" />
+                Locate on Map
+              </Button>
+            )}
           </div>
         </DialogContent>
       )}
