@@ -12,11 +12,6 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { ExifDataDialog } from "@/components/ExifDataDialog";
 import {
-  downloadAllImages,
-  downloadImage,
-  openImageInNewTab
-} from "@/utils/fileManagementUtils";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -60,7 +55,6 @@ const HeicConverter = () => {
     startEditing,
     cancelEditing,
     handleRename,
-    handleReconversion,
   } = useHeicConverter();
 
   useEffect(() => {
@@ -73,12 +67,6 @@ const HeicConverter = () => {
   useEffect(() => {
     setQualityInput(quality.toString());
   }, [quality]);
-
-  useEffect(() => {
-    if (images.length > 0) {
-      handleReconversion(undefined, 'format', format);
-    }
-  }, [format]);
 
   const handleModeChange = (value: string) => {
     if (value) {
@@ -132,9 +120,6 @@ const HeicConverter = () => {
     numValue = Math.round(numValue * 100) / 100;
     setQualityInput(numValue.toString());
     setQuality(numValue);
-    if (images.length > 0) {
-      handleReconversion(numValue);
-    }
   };
 
   const handleSliderChange = (value: number[]) => {
@@ -145,9 +130,6 @@ const HeicConverter = () => {
   const handleSliderCommit = (value: number[]) => {
     const newQuality = value[0];
     setQuality(newQuality);
-    if (images.length > 0) {
-      handleReconversion(newQuality);
-    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -168,7 +150,7 @@ const HeicConverter = () => {
     const allFiles = Array.from(selectedFiles);
     const heicFiles = allFiles.filter(isHeicHeif);
     const excludedByType = allFiles.length - heicFiles.length;
-    
+
     if (heicFiles.length === 0) {
       toast({
         title: "Invalid files",
@@ -181,36 +163,13 @@ const HeicConverter = () => {
     handleFiles(heicFiles);
 
     if (excludedByType > 0) {
+      setTimeout(() => {
         toast({
           title: "Note",
           description: `${excludedByType} non HEIC/HEIF ${excludedByType === 1 ? 'image was' : 'images were'} ignored`,
         });
+      }, 500);
     }
-  };
-
-  const showDownloadAll = images.length >= 2;
-  const downloadAllDisabled = isConverting || !images.every(img => img.convertedBlob);
-
-  const handleDownloadAll = async () => {
-    if (isConverting) {
-      toast({
-        title: "Conversion under process",
-        description: "Please wait to Download All..."
-      });
-      return;
-    }
-
-    toast({
-      title: "Starting download",
-      description: "Preparing to download all images..."
-    });
-
-    await downloadAllImages(images);
-
-    toast({
-      title: "Download complete",
-      description: `Successfully downloaded ${images.length} images`
-    });
   };
 
   return (
@@ -266,10 +225,12 @@ const HeicConverter = () => {
               const excludedCount = allFiles.length - heicFiles.length;
               
               if (excludedCount > 0) {
+                setTimeout(() => {
                   toast({
                     title: "Note",
                     description: `${excludedCount} non HEIC/HEIF ${excludedCount === 1 ? 'image was' : 'images were'} ignored`,
                   });
+                }, 500);
               }
               
               handleFiles(heicFiles);
@@ -345,63 +306,45 @@ const HeicConverter = () => {
             </div>
           )}
 
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-center items-center gap-4">
-              <div className={`transition-all duration-500 ${
-                isFormatSelectOpen ? "mb-32" : "mb-0"
-              }`}>
-                <Select 
-                  value={format} 
-                  onValueChange={(value: "jpg" | "png" | "webp") => {
-                    setFormat(value);
-                  }}
-                  disabled={isConverting}
-                  open={isFormatSelectOpen}
-                  onOpenChange={setIsFormatSelectOpen}
-                >
-                  <SelectTrigger className={cn(
-                    "w-[90px] focus:ring-0 focus:outline-none",
-                    isConverting && "opacity-50 cursor-not-allowed"
-                  )}>
-                    <SelectValue placeholder="Select format" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="jpg">JPG</SelectItem>
-                    <SelectItem value="png">PNG</SelectItem>
-                    <SelectItem value="webp">WEBP</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {images.length > 0 && (
-                <Button 
-                  onClick={reset} 
-                  variant="outline" 
-                  className="w-30 gap-2"
-                  disabled={isConverting}
-                >
-                  <RefreshCcw className={cn("w-5 h-5", isConverting && "animate-spin")} />
-                  Reset
-                </Button>
-              )}
+          <div className="flex justify-center space-x-4">
+            <div className={`flex justify-center transition-all duration-500 ${
+              isFormatSelectOpen ? "mb-32" : "mb-0"
+            }`}>
+              <Select 
+                value={format} 
+                onValueChange={(value: "jpg" | "png" | "webp") => setFormat(value)}
+                disabled={isConverting}
+                open={isFormatSelectOpen}
+                onOpenChange={setIsFormatSelectOpen}
+              >
+                <SelectTrigger className={cn(
+                  "w-[90px] focus:ring-0 focus:outline-none",
+                  isConverting && "opacity-50 cursor-not-allowed"
+                )}>
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="jpg">JPG</SelectItem>
+                  <SelectItem value="png">PNG</SelectItem>
+                  <SelectItem value="webp">WEBP</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-
-            {showDownloadAll && (
-              <div className="flex justify-center">
-                <Button
-                  onClick={handleDownloadAll}
-                  disabled={downloadAllDisabled}
-                  className={cn(
-                    "w-40 gap-2",
-                    downloadAllDisabled && "opacity-50"
-                  )}
-                >
-                  <Download className="w-5 h-5" />
-                  Download All
-                </Button>
-              </div>
-            )}
           </div>
+
+          {images.length > 0 && (
+            <div className="flex justify-center">
+              <Button 
+                onClick={reset} 
+                variant="outline" 
+                className="w-30 gap-2"
+                disabled={isConverting}
+              >
+                <RefreshCcw className={cn("w-5 h-5", isConverting && "animate-spin")} />
+                Reset
+              </Button>
+            </div>
+          )}
 
           {showProgress && (
             <div className="relative p-4 border border-border rounded-lg">
