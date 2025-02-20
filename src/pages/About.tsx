@@ -50,7 +50,7 @@ const About = () => {
                 <li>Drag-and-drop interface for easy use</li>
                 <li>No file upload limits</li>
                 <li>Preview images before conversion</li>
-                <li>100% free to use</li>
+                <li>Free to use with no daily or monthly limit.</li>
               </ul>
             </div>
 
