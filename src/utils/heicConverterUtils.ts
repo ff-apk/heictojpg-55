@@ -21,64 +21,94 @@ export const processRegularImage = async (
   quality: number = 1
 ): Promise<{ blob: Blob, previewUrl: string }> => {
   return new Promise((resolve, reject) => {
-    const createImageBitmap = async (file: File): Promise<ImageBitmap> => {
-      const buffer = await file.arrayBuffer();
-      return window.createImageBitmap(new Blob([buffer]));
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      const mimeType = targetFormat === 'jpg' 
+        ? 'image/jpeg' 
+        : targetFormat === 'webp' 
+          ? 'image/webp' 
+          : 'image/png';
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            URL.revokeObjectURL(url);
+            reject(new Error('Could not create blob'));
+            return;
+          }
+          const previewUrl = URL.createObjectURL(blob);
+          URL.revokeObjectURL(url);
+          resolve({ blob, previewUrl });
+        },
+        mimeType,
+        quality
+      );
     };
 
-    createImageBitmap(file)
-      .then(bitmap => {
-        // Create an offscreen canvas for better memory management
-        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image'));
+    };
 
-        ctx.drawImage(bitmap, 0, 0);
-        bitmap.close(); // Release bitmap memory
-
-        const mimeType = targetFormat === 'jpg' 
-          ? 'image/jpeg' 
-          : targetFormat === 'webp' 
-            ? 'image/webp' 
-            : 'image/png';
-
-        canvas.convertToBlob({
-          type: mimeType,
-          quality: quality
-        }).then(blob => {
-          const previewUrl = URL.createObjectURL(blob);
-          resolve({ blob, previewUrl });
-        }).catch(reject);
-      })
-      .catch(reject);
+    img.src = url;
   });
 };
 
 export const convertPngToWebp = async (pngBlob: Blob, quality: number = 1): Promise<Blob> => {
   return new Promise((resolve, reject) => {
-    createImageBitmap(pngBlob)
-      .then(bitmap => {
-        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
+    const img = new Image();
+    const url = URL.createObjectURL(pngBlob);
 
-        ctx.drawImage(bitmap, 0, 0);
-        bitmap.close(); // Release bitmap memory
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
 
-        canvas.convertToBlob({
-          type: 'image/webp',
-          quality: quality
-        }).then(resolve).catch(reject);
-      })
-      .catch(reject);
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            URL.revokeObjectURL(url);
+            reject(new Error('Could not create blob'));
+            return;
+          }
+          URL.revokeObjectURL(url);
+          resolve(blob);
+        },
+        'image/webp',
+        quality
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = url;
   });
 };
 
@@ -101,13 +131,7 @@ export const processInChunks = async <T>(
       }
     }));
 
-    // Force garbage collection if available
-    if (typeof window.gc === 'function') {
-      window.gc();
-    }
-
     // Small delay between chunks to prevent memory buildup
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 };
-

@@ -12,36 +12,49 @@ export const convertHeicToFormat = async (
   onProgress?: (progress: number) => void
 ): Promise<{ blob: Blob, previewUrl: string, isHeic: boolean }> => {
   try {
+    // First try to convert directly without chunking for small files (under 5MB)
+    if (file.size < 5 * 1024 * 1024) {
+      try {
+        console.log('Attempting direct conversion for small file:', file.name);
+        const blob = await heicTo({
+          blob: file,
+          type: targetFormat === 'jpg' ? 'image/jpeg' : 
+                targetFormat === 'webp' ? 'image/webp' : 
+                'image/png',
+          quality
+        });
+        const previewUrl = URL.createObjectURL(blob);
+        console.log('Direct conversion successful for:', file.name);
+        return { blob, previewUrl, isHeic: true };
+      } catch (error) {
+        console.log('Direct conversion failed, trying regular image:', error);
+        const result = await processRegularImage(file, targetFormat, quality);
+        return { ...result, isHeic: false };
+      }
+    }
+
+    // For larger files, use chunked processing
     let convertedBlob: Blob;
+    const fileBuffer = await file.arrayBuffer();
+    const chunks: ArrayBuffer[] = [];
+    
+    for (let i = 0; i < fileBuffer.byteLength; i += CHUNK_SIZE) {
+      chunks.push(fileBuffer.slice(i, i + CHUNK_SIZE));
+    }
 
     const processChunk = async (chunk: ArrayBuffer): Promise<Blob> => {
-      const chunkBlob = new Blob([chunk]);
-      
-      if (targetFormat === 'webp') {
-        const pngBlob = await heicTo({
-          blob: chunkBlob,
-          type: 'image/png',
-          quality: 1
-        });
-        return convertPngToWebp(pngBlob, quality);
-      } else {
-        return heicTo({
-          blob: chunkBlob,
-          type: targetFormat === 'jpg' ? 'image/jpeg' : 'image/png',
-          quality: quality
-        });
-      }
+      const chunkBlob = new Blob([chunk], { type: file.type });
+      return heicTo({
+        blob: chunkBlob,
+        type: targetFormat === 'jpg' ? 'image/jpeg' : 
+              targetFormat === 'webp' ? 'image/webp' : 
+              'image/png',
+        quality
+      });
     };
 
     try {
-      // Read file in chunks
-      const fileBuffer = await file.arrayBuffer();
-      const chunks: ArrayBuffer[] = [];
-      
-      for (let i = 0; i < fileBuffer.byteLength; i += CHUNK_SIZE) {
-        chunks.push(fileBuffer.slice(i, i + CHUNK_SIZE));
-      }
-
+      console.log('Starting chunked processing for:', file.name);
       let processedChunks: Blob[] = [];
       await processInChunks(
         chunks,
@@ -61,10 +74,10 @@ export const convertHeicToFormat = async (
       });
 
       const previewUrl = URL.createObjectURL(convertedBlob);
+      console.log('Chunked processing successful for:', file.name);
       return { blob: convertedBlob, previewUrl, isHeic: true };
     } catch (error) {
-      console.log('HEIC conversion failed, trying as regular image:', error);
-      // If heic-to conversion fails, try processing as regular image
+      console.log('Chunked processing failed, trying regular image:', error);
       const result = await processRegularImage(file, targetFormat, quality);
       return { ...result, isHeic: false };
     }
@@ -73,4 +86,3 @@ export const convertHeicToFormat = async (
     throw error;
   }
 };
-
