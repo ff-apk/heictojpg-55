@@ -167,7 +167,6 @@ const HeicConverter = () => {
 
     const allFiles = Array.from(selectedFiles);
     const heicFiles = allFiles.filter(isHeicHeif);
-    const excludedByType = allFiles.length - heicFiles.length;
     
     if (heicFiles.length === 0) {
       toast({
@@ -178,13 +177,19 @@ const HeicConverter = () => {
       return;
     }
 
+    // Clear the input value to ensure the change event fires even with the same files
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
     handleFiles(heicFiles);
 
+    const excludedByType = allFiles.length - heicFiles.length;
     if (excludedByType > 0) {
-        toast({
-          title: "Note",
-          description: `${excludedByType} non HEIC/HEIF ${excludedByType === 1 ? 'image was' : 'images were'} ignored`,
-        });
+      toast({
+        title: "Note",
+        description: `${excludedByType} non HEIC/HEIF ${excludedByType === 1 ? 'image was' : 'images were'} ignored`,
+      });
     }
   };
 
@@ -499,3 +504,4 @@ const HeicConverter = () => {
 };
 
 export default HeicConverter;
+
