@@ -205,17 +205,7 @@ const HeicConverter = () => {
       return;
     }
 
-    toast({
-      title: "Starting download",
-      description: "Preparing to download all images..."
-    });
-
     await downloadAllImages(images);
-
-    toast({
-      title: "Download complete",
-      description: `Successfully downloaded ${images.length} images`
-    });
   };
 
   return (
@@ -395,7 +385,6 @@ const HeicConverter = () => {
               <div className="flex justify-center">
                 <Button
                   onClick={handleDownloadAll}
-                  disabled={downloadAllDisabled}
                   className={cn(
                     "w-40 gap-2",
                     downloadAllDisabled && "opacity-50"
