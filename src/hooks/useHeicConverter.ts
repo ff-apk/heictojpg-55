@@ -1,27 +1,41 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageFormat, ConvertedImage, EditState } from "@/types/heicConverter";
-import { ConversionTrigger, Qualities } from "@/types/conversion";
-import { MAX_FILES } from "@/constants/upload";
+import { isHeicOrHeif, getNewFileName } from "@/utils/heicConverterUtils";
 import { convertHeicToFormat } from "@/services/heicConversionService";
-import { useDragAndDrop } from "@/hooks/useDragAndDrop";
-import { 
-  formatQuality,
-  getConversionMessage,
-  getConversionStartMessage,
-  validateFileName
-} from "@/utils/conversionUtils";
-import {
-  cleanupObjectURLs,
-  downloadImage as downloadImageUtil,
-  openImageInNewTab as openImageInNewTabUtil
-} from "@/utils/fileManagementUtils";
+import { MAX_FILES } from "@/constants/upload";
+
+interface Qualities {
+  [key: string]: number;
+}
+
+type ConversionTrigger = 'format' | 'quality';
 
 const CHUNK_SIZE = 2;
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
+const formatQuality = (quality: number): string => {
+  return Number(quality.toFixed(2)).toString();
+};
+
+const getConversionMessage = (count: number, format: string, quality: number, includesNonHeic: boolean) => {
+  const pluralSuffix = count > 1 ? 's' : '';
+  const actionVerb = includesNonHeic ? 'processed' : 'converted';
+  if (format === 'png') {
+    return `Successfully ${actionVerb} ${count} image${pluralSuffix} to PNG`;
+  }
+  return `Successfully ${actionVerb} ${count} image${pluralSuffix} to ${format.toUpperCase()} with quality ${formatQuality(quality)}`;
+};
+
+const getConversionStartMessage = (trigger: ConversionTrigger) => {
+  return trigger === 'format' 
+    ? "Please wait while we convert your images to the new format"
+    : "Please wait while we convert your images to the new quality";
+};
 
 export const useHeicConverter = () => {
   const [images, setImages] = useState<ConvertedImage[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
@@ -52,11 +66,19 @@ export const useHeicConverter = () => {
     localStorage.setItem(`heic-convert-quality-${format}`, newQuality.toString());
   };
 
+  const cleanupObjectURLs = () => {
+    images.forEach(image => {
+      if (image.previewUrl) {
+        URL.revokeObjectURL(image.previewUrl);
+      }
+    });
+  };
+
   useEffect(() => {
     return () => {
-      cleanupObjectURLs(images);
+      cleanupObjectURLs();
     };
-  }, [images]);
+  }, []);
 
   const processImagesSequentially = async (
     files: File[], 
@@ -78,6 +100,10 @@ export const useHeicConverter = () => {
       
       for (const file of chunk) {
         try {
+          if (file.size > MAX_FILE_SIZE) {
+            throw new Error(`File ${file.name} is too large (max ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+          }
+
           const finalFormat = targetFormat || format;
           const finalQuality = finalFormat === 'png' ? 0.95 : (targetQuality ?? qualities[finalFormat]);
 
@@ -97,7 +123,7 @@ export const useHeicConverter = () => {
             id: Math.random().toString(36).substr(2, 9),
             originalFile: file,
             previewUrl: imageResult.previewUrl,
-            fileName: file.name.replace(/\.(heic|heif)$/i, `.${finalFormat}`),
+            fileName: getNewFileName(file.name, finalFormat),
             exifData: null,
             convertedBlob: imageResult.blob,
             progress: 100,
@@ -107,15 +133,26 @@ export const useHeicConverter = () => {
           setConvertedCount(prev => prev + 1);
         } catch (error) {
           console.error(`Failed to convert ${file.name}:`, error);
-          toast({
-            title: "Error",
-            description: `Conversion failed for ${file.name}`,
-            variant: "destructive",
-          });
+          
+          if (error instanceof Error && error.message.includes('out of memory')) {
+            toast({
+              title: "Memory Error",
+              description: `Failed to convert ${file.name} - file may be too large`,
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: `Conversion failed for ${file.name}`,
+              variant: "destructive",
+            });
+          }
         }
 
         currentProgress += incrementPerImage;
         setProgress(Math.min(currentProgress, 100));
+
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       if (typeof window.gc === 'function') {
@@ -131,42 +168,11 @@ export const useHeicConverter = () => {
     return hasNonHeicFiles;
   };
 
-  const handleFiles = async (files: File[]) => {
-    const allFiles = Array.from(files);
-    const filesToProcess = allFiles.slice(0, MAX_FILES);
-    const excludedCount = allFiles.length - filesToProcess.length;
-
-    setIsConverting(true);
-    cleanupObjectURLs(images);
-    setImages([]);
-
-    try {
-      const hasNonHeic = await processImagesSequentially(filesToProcess);
-
-      if (excludedCount > 0) {
-        toast({
-          title: `Max upload limit is ${MAX_FILES} at a time`,
-          description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded`,
-          duration: 7000,
-        });
-      }
-    } catch (error) {
-      console.error('Unexpected error during processing:', error);
-      toast({
-        title: "Unexpected error",
-        description: "An unexpected error occurred. Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsConverting(false);
-    }
-  };
-
   const handleReconversion = async (newQuality?: number, trigger: ConversionTrigger = 'quality', targetFormat?: ImageFormat) => {
     const finalFormat = targetFormat || format;
     const finalQuality = finalFormat === 'png' ? 0.95 : (newQuality ?? qualities[finalFormat]);
     
-    cleanupObjectURLs(images);
+    cleanupObjectURLs();
     const currentImages = images.map(img => ({
       id: img.id,
       originalFile: img.originalFile,
@@ -190,7 +196,7 @@ export const useHeicConverter = () => {
 
       toast({
         title: "Conversion complete",
-        description: getConversionMessage(currentImages.length, finalFormat, finalQuality, hasNonHeic, trigger),
+        description: getConversionMessage(currentImages.length, finalFormat, finalQuality, hasNonHeic),
       });
     } catch (error) {
       console.error('Unexpected error during conversion:', error);
@@ -204,18 +210,99 @@ export const useHeicConverter = () => {
     }
   };
 
-  const downloadImage = (imageId: string) => {
-    const image = images.find(img => img.id === imageId);
-    if (image) {
-      downloadImageUtil(image);
+  const handleFiles = async (files: File[]) => {
+    const allFiles = Array.from(files);
+    const filesToProcess = allFiles.slice(0, MAX_FILES);
+    const excludedFiles = allFiles.slice(MAX_FILES);
+    const excludedCount = excludedFiles.length;
+
+    setIsConverting(true);
+    cleanupObjectURLs();
+    setImages([]);
+
+    try {
+      const hasNonHeic = await processImagesSequentially(filesToProcess);
+
+      if (excludedCount > 0) {
+        setTimeout(() => {
+          toast({
+            title: `Max upload limit is ${MAX_FILES} at a time`,
+            description: `Other ${excludedCount} image${excludedCount > 1 ? 's' : ''} have been excluded`,
+            duration: 7000,
+          });
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Unexpected error during processing:', error);
+      toast({
+        title: "Unexpected error",
+        description: "An unexpected error occurred. Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConverting(false);
     }
+  };
+
+  const reset = () => {
+    cleanupObjectURLs();
+    setImages([]);
+    setProgress(0);
+    setShowProgress(false);
+    setTotalImages(0);
+    setConvertedCount(0);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const items = Array.from(e.dataTransfer.files);
+    await handleFiles(items);
+  };
+
+  const downloadImage = async (imageId: string) => {
+    const image = images.find(img => img.id === imageId);
+    if (!image || !image.convertedBlob) return;
+
+    const url = URL.createObjectURL(image.convertedBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = image.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const openImageInNewTab = (imageId: string) => {
     const image = images.find(img => img.id === imageId);
-    if (image) {
-      openImageInNewTabUtil(image);
-    }
+    if (!image || !image.convertedBlob) return;
+
+    const url = URL.createObjectURL(image.convertedBlob);
+    window.open(url, '_blank');
+    
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
   };
 
   const startEditing = (imageId: string) => {
@@ -224,6 +311,16 @@ export const useHeicConverter = () => {
 
   const cancelEditing = () => {
     setEditState({ imageId: null, isEditing: false });
+  };
+
+  const validateFileName = (name: string, extension: string): string => {
+    let sanitized = name.replace(/[<>:"/\\|?*]/g, '').trim();
+    
+    if (!sanitized) {
+      sanitized = 'image';
+    }
+    
+    return `${sanitized}.${extension}`;
   };
 
   const handleRename = (imageId: string, newName: string) => {
@@ -268,20 +365,9 @@ export const useHeicConverter = () => {
     });
   };
 
-  const reset = () => {
-    cleanupObjectURLs(images);
-    setImages([]);
-    setProgress(0);
-    setShowProgress(false);
-    setTotalImages(0);
-    setConvertedCount(0);
-  };
-
-  const dragAndDrop = useDragAndDrop(handleFiles);
-
   return {
     images,
-    isDragging: dragAndDrop.isDragging,
+    isDragging,
     format,
     isConverting,
     editState,
@@ -293,16 +379,15 @@ export const useHeicConverter = () => {
     setFormat,
     setQuality,
     handleFiles,
-    handleDragOver: dragAndDrop.handleDragOver,
-    handleDragEnter: dragAndDrop.handleDragEnter,
-    handleDragLeave: dragAndDrop.handleDragLeave,
-    handleDrop: dragAndDrop.handleDrop,
+    handleDragOver,
+    handleDragEnter,
+    handleDragLeave,
+    handleDrop,
     downloadImage,
     reset,
     openImageInNewTab,
     startEditing,
     cancelEditing,
     handleRename,
-    handleReconversion,
   };
 };
