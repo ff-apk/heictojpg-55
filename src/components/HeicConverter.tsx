@@ -25,9 +25,21 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const SAMPLE_IMAGES = [
-  { name: 'BledCastle.HEIC', path: '/BledCastle.HEIC' },
-  { name: 'Flower.HEIC', path: '/Flower.HEIC' },
-  { name: 'Sea.heic', path: '/Sea.heic' },
+  { 
+    name: 'BledCastle.HEIC', 
+    path: '/BledCastle.HEIC',
+    preview: '/BledCastle-Preview.jpg'
+  },
+  { 
+    name: 'Flower.HEIC', 
+    path: '/Flower.HEIC',
+    preview: '/Flower-Preview.jpg'
+  },
+  { 
+    name: 'Sea.heic', 
+    path: '/Sea.heic',
+    preview: '/Sea-Preview.jpg'
+  },
 ];
 
 const HeicConverter = () => {
@@ -340,6 +352,30 @@ const HeicConverter = () => {
           </Button>
         </div>
 
+        {showSampleImages && images.length === 0 && (
+          <div className="space-y-4">
+            <p className="text-center text-muted-foreground">Or try one of these:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {SAMPLE_IMAGES.map((image) => (
+                <button
+                  key={image.name}
+                  onClick={() => handleSampleImageClick(image)}
+                  className="group relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors duration-200"
+                >
+                  <img
+                    src={image.preview}
+                    alt={image.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                    <p className="text-white text-sm font-medium">{image.name}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
           {format !== 'png' && (
             <div className="space-y-6">
@@ -365,8 +401,8 @@ const HeicConverter = () => {
                 onValueCommit={handleSliderCommit}
                 disabled={isConverting}
                 className={cn(
-  isConverting && "opacity-50"
-)}
+                  isConverting && "opacity-50"
+                )}
               />
             </div>
           )}
@@ -435,30 +471,6 @@ const HeicConverter = () => {
             </div>
           )}
         </div>
-
-        {showSampleImages && images.length === 0 && (
-          <div className="space-y-4">
-            <p className="text-center text-muted-foreground">Or try one of these:</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {SAMPLE_IMAGES.map((image) => (
-                <button
-                  key={image.name}
-                  onClick={() => handleSampleImageClick(image)}
-                  className="group relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors duration-200"
-                >
-                  <img
-                    src={image.path}
-                    alt={image.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                    <p className="text-white text-sm font-medium">{image.name}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {images.map((image, index) => (
           <React.Fragment key={image.id}>
