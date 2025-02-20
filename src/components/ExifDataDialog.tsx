@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import ExifReader from "exifreader";
@@ -10,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Info } from "lucide-react";
+import { Info, Copy, Download } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ExifDataDialogProps {
@@ -18,12 +17,14 @@ interface ExifDataDialogProps {
   fileName: string;
 }
 
+type ExifValue = string | number | Date | Array<any> | { [key: string]: any };
+
 interface ExifTag {
-  value: any;
+  value: ExifValue;
   description?: string;
 }
 
-interface ExifTags {
+type ExifTags = {
   [key: string]: ExifTag;
 }
 
@@ -39,23 +40,34 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
       const arrayBuffer = await originalFile.arrayBuffer();
       const tags = await ExifReader.load(arrayBuffer, { expanded: true });
       
-      if (!tags || Object.keys(tags).length === 0) {
+      const formattedTags: ExifTags = {};
+      Object.values(tags).forEach((group) => {
+        if (typeof group === 'object' && group !== null) {
+          Object.entries(group).forEach(([tagKey, tagValue]) => {
+            if (tagValue && typeof tagValue === 'object') {
+              formattedTags[tagKey] = tagValue as ExifTag;
+            }
+          });
+        }
+      });
+
+      if (Object.keys(formattedTags).length === 0) {
         toast({
           title: "Not found",
-          description: "The file has no Exif data",
+          description: "The image has no EXIF data",
           variant: "destructive",
         });
         setOpen(false);
         return;
       }
       
-      setExifData(tags);
+      setExifData(formattedTags);
       setOpen(true);
     } catch (error) {
       console.error('Error reading EXIF data:', error);
       toast({
-        title: "Error",
-        description: "Failed to read EXIF data",
+        title: "Not found",
+        description: "The image has no EXIF data",
         variant: "destructive",
       });
       setOpen(false);
@@ -65,35 +77,72 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
   };
 
   const formatExifValue = (tag: ExifTag): string => {
-    if (tag.description) {
-      return tag.description;
+    if (tag.description) return tag.description;
+    
+    if (Array.isArray(tag.value)) {
+      return tag.value.join(", ");
     }
     
-    const value = tag.value;
-    
-    if (Array.isArray(value)) {
-      return value.join(", ");
+    if (tag.value instanceof Date) {
+      return tag.value.toLocaleString();
     }
     
-    if (value instanceof Date) {
-      return value.toLocaleString();
+    if (typeof tag.value === "object" && tag.value !== null) {
+      return JSON.stringify(tag.value);
     }
     
-    if (typeof value === "object" && value !== null) {
-      return JSON.stringify(value);
-    }
-    
-    return String(value);
+    return String(tag.value);
   };
 
   const filterExifData = (tags: ExifTags): [string, ExifTag][] => {
     return Object.entries(tags).filter(([key, value]) => {
-      // Filter out undefined or null values
-      if (!value || !value.value) return false;
-      // Filter out internal ExifReader properties
-      if (key.startsWith('_')) return false;
-      return true;
+      return !key.startsWith('_') && value !== undefined && value !== null;
     });
+  };
+
+  const formatExifDataForCopy = (data: [string, ExifTag][]): string => {
+    return data
+      .map(([key, tag]) => `${key}: ${formatExifValue(tag)}`)
+      .join('\n');
+  };
+
+  const handleCopyClick = async () => {
+    if (!exifData) return;
+    
+    const formattedData = formatExifDataForCopy(filterExifData(exifData));
+    
+    try {
+      await navigator.clipboard.writeText(formattedData);
+      toast({
+        title: "Copied",
+        description: "EXIF data copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy EXIF data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveJson = () => {
+    if (!exifData) return;
+    
+    const jsonData = filterExifData(exifData).reduce((acc, [key, tag]) => ({
+      ...acc,
+      [key]: formatExifValue(tag)
+    }), {});
+
+    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${fileName.replace(/\.[^/.]+$/, '')}_exif.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -110,11 +159,11 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
         </Button>
       </DialogTrigger>
       {exifData && (
-        <DialogContent className="max-w-3xl max-h-[80vh]">
+        <DialogContent className="sm:max-w-3xl w-11/12 max-h-[80vh] rounded-xl">
           <DialogHeader>
             <DialogTitle>EXIF Data for {fileName}</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
+          <ScrollArea className="h-[50vh] w-full rounded-md border p-4 bg-gray-100 dark:bg-gray-900">
             <div className="grid grid-cols-2 gap-4">
               {filterExifData(exifData).map(([key, tag]) => (
                 <React.Fragment key={key}>
@@ -128,6 +177,24 @@ export function ExifDataDialog({ originalFile, fileName }: ExifDataDialogProps) 
               ))}
             </div>
           </ScrollArea>
+          <div className="flex justify-center gap-2 mt-4">
+            <Button
+              onClick={handleCopyClick}
+              variant="outline"
+              className="gap-2"
+            >
+              <Copy className="w-4 h-4" />
+              Copy EXIF
+            </Button>
+            <Button
+              onClick={handleSaveJson}
+              variant="outline"
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Save as JSON
+            </Button>
+          </div>
         </DialogContent>
       )}
     </Dialog>

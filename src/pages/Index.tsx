@@ -15,12 +15,12 @@ const Index = () => {
       <SEO
         title="HEIC to JPG - Convert HEIC Images to JPG Online"
         description="Convert HEIC images to JPG, PNG, or WEBP format online. View and process multiple images at once with our free converter."
-        canonicalUrl="https://clipboard-to-image.toolyoulove.com/"
+        canonicalUrl="https://heictojpgpro.com/"
         robots="max-image-preview:large"
         ogTitle="HEIC to JPG - Convert HEIC Images to JPG Online"
         ogDescription="Convert HEIC images to JPG, PNG, or WEBP format online. View and process multiple images at once with our free converter."
-        ogUrl="https://clipboard-to-image.toolyoulove.com/"
-        ogImage="https://clipboard-to-image.toolyoulove.com/banner.jpg"
+        ogUrl="https://heictojpgpro.com/"
+        ogImage="https://heictojpgpro.com/banner.jpg"
         ogType="website"
       />
       <div className="min-h-screen bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8">
