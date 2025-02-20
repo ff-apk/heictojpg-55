@@ -369,7 +369,6 @@ const HeicConverter = () => {
                     <SelectItem value="webp">WEBP</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
 
               {images.length > 0 && (
                 <Button 
@@ -382,6 +381,7 @@ const HeicConverter = () => {
                   Reset
                 </Button>
               )}
+                </div>
             </div>
 
             {showDownloadAll && (
