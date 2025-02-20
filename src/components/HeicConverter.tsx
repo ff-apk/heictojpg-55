@@ -357,7 +357,7 @@ const HeicConverter = () => {
                   onOpenChange={setIsFormatSelectOpen}
                 >
                   <SelectTrigger className={cn(
-                    "w-[90px] focus:ring-0 focus:outline-none",
+                    "w-[90px] md:w-[120px] focus:ring-0 focus:outline-none",
                     isConverting && "opacity-50 cursor-not-allowed"
                   )}>
                     <SelectValue placeholder="Select format" />
