@@ -277,7 +277,7 @@ const HeicConverter = () => {
           <Button
             variant="outline"
             className={cn(
-              "w-full md:w-[600px] lg:w-[800px] py-8 text-lg gap-3 relative",
+              "w-[600px] py-8 text-lg gap-3 relative",
               "border-2 border-dashed",
               isDragging ? "border-primary bg-primary/5" : "border-border",
               "transition-colors duration-200"
