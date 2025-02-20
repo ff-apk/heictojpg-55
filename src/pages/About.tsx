@@ -6,7 +6,7 @@ import SEO from "@/components/SEO";
 import AdSenseHorizontal from "@/components/AdSenseHorizontal";
 import AdSenseResponsive from "@/components/AdSenseResponsive";
 import DesktopSidebar from "@/components/DesktopSidebar";
-import { Sparkles, Shield, Globe } from "lucide-react";
+import { Shield, FileImage, Zap, Settings, Globe } from "lucide-react";
 
 const About = () => {
   useTheme();
@@ -14,14 +14,14 @@ const About = () => {
   return (
     <>
       <SEO
-        title="About Clipboard to Image - Easy Image Conversion Tool"
-        description="Learn about our free Clipboard to Image converter tool. Convert clipboard content to downloadable images instantly with our user-friendly tool."
-        canonicalUrl="https://clipboard-to-image.toolyoulove.com/about"
+        title="About HEIC to JPG - Free HEIC Image Converter"
+        description="Learn about our free HEIC to JPG converter. Convert HEIC images from iPhone and iOS devices to JPG, PNG, or WEBP format with our secure, local conversion tool."
+        canonicalUrl="https://heictojpgpro.com/about"
         robots="max-image-preview:large"
-        ogTitle="About Clipboard to Image - Easy Image Conversion Tool"
-        ogDescription="Learn about our free Clipboard to Image converter tool. Convert clipboard content to downloadable images instantly with our user-friendly tool."
-        ogUrl="https://clipboard-to-image.toolyoulove.com/about"
-        ogImage="https://clipboard-to-image.toolyoulove.com/banner.jpg"
+        ogTitle="About HEIC to JPG - Free HEIC Image Converter"
+        ogDescription="Learn about our free HEIC to JPG converter. Convert HEIC images from iPhone and iOS devices to JPG, PNG, or WEBP format with our secure, local conversion tool."
+        ogUrl="https://heictojpgpro.com/about"
+        ogImage="https://heictojpgpro.com/banner.jpg"
         ogType="article"
       />
       <div className="min-h-screen bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8">
@@ -29,28 +29,28 @@ const About = () => {
           <AdSenseHorizontal />
           <div className="text-center">
             <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
-              About Clipboard to Image
+              About HEIC to JPG Converter
             </h1>
           </div>
 
           <div className="space-y-6">
             <p className="text-lg">
-              Welcome to Clipboard to Image, a simple yet powerful tool designed to help you convert clipboard content into downloadable images instantly.
+              Welcome to HEIC to JPG, a powerful and secure tool designed to help you convert HEIC images from your iPhone and iOS devices into widely compatible formats like JPG, PNG, and WEBP.
             </p>
 
             <div>
               <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-primary" />
+                <Settings className="w-6 h-6 text-primary" />
                 Key Features
               </h2>
               <ul className="list-disc pl-6 space-y-2">
-                <li>Quick clipboard-to-image conversion with just one paste</li>
-                <li>Keyboard shortcut support (Ctrl+V / Cmd+V)</li>
-                <li>Dark and light mode for comfortable viewing</li>
-                <li>Local processing - your images never leave your browser</li>
-                <li>Cross-browser compatibility</li>
-                <li>Instant image downloads in PNG format</li>
-                <li>No registration required</li>
+                <li>Convert multiple HEIC images simultaneously</li>
+                <li>Support for JPG, PNG, and WEBP output formats</li>
+                <li>Adjustable quality settings for optimal results</li>
+                <li>Drag-and-drop interface for easy use</li>
+                <li>No file upload limits</li>
+                <li>Preview images before conversion</li>
+                <li>100% free to use</li>
               </ul>
             </div>
 
@@ -60,7 +60,17 @@ const About = () => {
                 Privacy & Security
               </h2>
               <p className="mb-4">
-                Your privacy is our priority. All image processing happens locally in your browser - we never store or transmit your images to any server. This ensures your content remains completely private and secure.
+                Your privacy is our top priority. All image conversions happen locally in your browser - your images never leave your device or get uploaded to any server. This ensures complete privacy and security while processing your personal photos and images.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                <Zap className="w-6 h-6 text-primary" />
+                Performance
+              </h2>
+              <p className="mb-4">
+                Our converter processes images quickly and efficiently right in your browser. With support for batch processing, you can convert multiple HEIC images at once while maintaining high quality output. The local processing approach also means faster conversion times with no waiting for uploads or downloads.
               </p>
             </div>
 
@@ -75,7 +85,7 @@ const About = () => {
             </div>
 
             <p>
-              Start using Clipboard to Image today - it's free, fast, and focused on providing the best image conversion experience possible!
+              Start using HEIC to JPG today - it's free, secure, and designed to make your image conversion process as smooth as possible!
             </p>
           </div>
           <AdSenseResponsive />
