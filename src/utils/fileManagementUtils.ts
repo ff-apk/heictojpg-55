@@ -6,6 +6,10 @@ export const cleanupObjectURLs = (images: ConvertedImage[]) => {
     if (image.previewUrl) {
       URL.revokeObjectURL(image.previewUrl);
     }
+    // Clear any associated Blob data
+    if (image.convertedBlob instanceof Blob) {
+      URL.revokeObjectURL(URL.createObjectURL(image.convertedBlob));
+    }
   });
 };
 
@@ -28,6 +32,7 @@ export const openImageInNewTab = (image: ConvertedImage) => {
   const url = URL.createObjectURL(image.convertedBlob);
   window.open(url, '_blank');
   
+  // Clean up the URL after a short delay to ensure the new tab has loaded
   setTimeout(() => {
     URL.revokeObjectURL(url);
   }, 1000);

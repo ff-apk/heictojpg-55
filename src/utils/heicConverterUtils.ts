@@ -22,7 +22,12 @@ export const processRegularImage = async (
 ): Promise<{ blob: Blob, previewUrl: string }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    
     img.onload = () => {
+      // Revoke the object URL as soon as the image loads
+      URL.revokeObjectURL(objectUrl);
+      
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
       canvas.height = img.height;
@@ -46,6 +51,10 @@ export const processRegularImage = async (
         (blob) => {
           if (blob) {
             const previewUrl = URL.createObjectURL(blob);
+            // Clear canvas content and remove references
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.width = 0;
+            canvas.height = 0;
             resolve({ blob, previewUrl });
           } else {
             reject(new Error(`Failed to convert to ${targetFormat.toUpperCase()}`));
@@ -55,15 +64,25 @@ export const processRegularImage = async (
         quality
       );
     };
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = URL.createObjectURL(file);
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image'));
+    };
+    
+    img.src = objectUrl;
   });
 };
 
 export const convertPngToWebp = async (pngBlob: Blob, quality: number = 1): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    const objectUrl = URL.createObjectURL(pngBlob);
+    
     img.onload = () => {
+      // Revoke the object URL as soon as the image loads
+      URL.revokeObjectURL(objectUrl);
+      
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
       canvas.height = img.height;
@@ -78,6 +97,10 @@ export const convertPngToWebp = async (pngBlob: Blob, quality: number = 1): Prom
       canvas.toBlob(
         (blob) => {
           if (blob) {
+            // Clear canvas content and remove references
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.width = 0;
+            canvas.height = 0;
             resolve(blob);
           } else {
             reject(new Error('Failed to convert to WEBP'));
@@ -87,8 +110,13 @@ export const convertPngToWebp = async (pngBlob: Blob, quality: number = 1): Prom
         quality
       );
     };
-    img.onerror = () => reject(new Error('Failed to load PNG image'));
-    img.src = URL.createObjectURL(pngBlob);
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load PNG image'));
+    };
+    
+    img.src = objectUrl;
   });
 };
 

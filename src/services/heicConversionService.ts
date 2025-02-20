@@ -24,6 +24,8 @@ export const convertHeicToFormat = async (
 
         // Then convert PNG to WebP using existing utility with the specified quality
         convertedBlob = await convertPngToWebp(pngBlob, quality);
+        // Clean up intermediate PNG blob
+        URL.revokeObjectURL(URL.createObjectURL(pngBlob));
         onProgress?.(90);
       } else {
         // Direct conversion to JPG or PNG
@@ -50,3 +52,4 @@ export const convertHeicToFormat = async (
     throw error;
   }
 };
+

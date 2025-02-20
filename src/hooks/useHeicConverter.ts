@@ -140,9 +140,15 @@ export const useHeicConverter = () => {
     const filesToProcess = allFiles.slice(0, MAX_FILES);
     const excludedCount = allFiles.length - filesToProcess.length;
 
-    setIsConverting(true);
+    // Clean up existing image resources before starting new conversion
     cleanupObjectURLs(images);
     setImages([]);
+
+    if (typeof window.gc === 'function') {
+      window.gc();
+    }
+
+    setIsConverting(true);
 
     try {
       const hasNonHeic = await processImagesSequentially(filesToProcess);
@@ -170,6 +176,7 @@ export const useHeicConverter = () => {
     const finalFormat = targetFormat || format;
     const finalQuality = finalFormat === 'png' ? 0.95 : (newQuality ?? qualities[finalFormat]);
     
+    // Clean up existing image resources before starting reconversion
     cleanupObjectURLs(images);
     const currentImages = images.map(img => ({
       id: img.id,
@@ -178,6 +185,11 @@ export const useHeicConverter = () => {
     }));
 
     setImages([]);
+
+    if (typeof window.gc === 'function') {
+      window.gc();
+    }
+
     setIsConverting(true);
 
     toast({
