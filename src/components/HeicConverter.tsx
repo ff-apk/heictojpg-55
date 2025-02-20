@@ -160,6 +160,8 @@ const HeicConverter = () => {
     }
 
     const filesToProcess = heicFiles.slice(0, MAX_FILES);
+    const excludedByLimit = heicFiles.length - filesToProcess.length;
+    
     handleFiles(filesToProcess);
 
     if (excludedCount > 0) {
@@ -169,6 +171,16 @@ const HeicConverter = () => {
           description: `${excludedCount} non HEIC/HEIF ${excludedCount === 1 ? 'image was' : 'images were'} ignored`,
         });
       }, 500);
+    }
+
+    if (excludedByLimit > 0) {
+      setTimeout(() => {
+        toast({
+          title: `Max upload limit is ${MAX_FILES} at a time`,
+          description: `Other ${excludedByLimit} image${excludedByLimit > 1 ? 's' : ''} have been excluded`,
+          duration: 7000,
+        });
+      }, 1000);
     }
   };
 
