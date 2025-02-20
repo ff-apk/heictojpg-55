@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Download, RefreshCcw, Pencil, FolderOpen, ImageIcon } from "lucide-react";
@@ -139,51 +140,6 @@ const HeicConverter = () => {
     return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
   };
 
-  const isHeicHeif = (file: File) => 
-    file.name.toLowerCase().endsWith('.heic') || 
-    file.name.toLowerCase().endsWith('.heif');
-
-  const handleFileSelection = (selectedFiles: FileList | null) => {
-    if (!selectedFiles) return;
-
-    const allFiles = Array.from(selectedFiles);
-    const heicFiles = allFiles.filter(isHeicHeif);
-    const excludedCount = allFiles.length - heicFiles.length;
-
-    if (heicFiles.length === 0) {
-      toast({
-        title: "Invalid files",
-        description: "Please select HEIC/HEIF images only",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const filesToProcess = heicFiles.slice(0, MAX_FILES);
-    const excludedByLimit = heicFiles.length - filesToProcess.length;
-    
-    handleFiles(filesToProcess);
-
-    if (excludedCount > 0) {
-      setTimeout(() => {
-        toast({
-          title: "Note",
-          description: `${excludedCount} non HEIC/HEIF ${excludedCount === 1 ? 'image was' : 'images were'} ignored`,
-        });
-      }, 500);
-    }
-
-    if (excludedByLimit > 0) {
-      setTimeout(() => {
-        toast({
-          title: `Max upload limit is ${MAX_FILES} at a time`,
-          description: `Other ${excludedByLimit} image${excludedByLimit > 1 ? 's' : ''} have been excluded`,
-          duration: 7000,
-        });
-      }, 1000);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
@@ -224,7 +180,13 @@ const HeicConverter = () => {
           ref={fileInputRef}
           className="hidden"
           multiple
-          onChange={(e) => handleFileSelection(e.target.files)}
+          accept=".heic,.heif"
+          onChange={(e) => {
+            if (e.target.files) {
+              handleFiles(Array.from(e.target.files));
+              e.target.value = '';
+            }
+          }}
         />
         <input
           type="file"
@@ -233,14 +195,17 @@ const HeicConverter = () => {
           onChange={(e) => {
             if (e.target.files) {
               const allFiles = Array.from(e.target.files);
-              const heicFiles = allFiles.filter(isHeicHeif);
+              const heicFiles = allFiles.filter(file => 
+                file.name.toLowerCase().endsWith('.heic') || 
+                file.name.toLowerCase().endsWith('.heif')
+              );
               const excludedCount = allFiles.length - heicFiles.length;
               
               if (excludedCount > 0) {
                 setTimeout(() => {
                   toast({
                     title: "Note",
-                    description: `${excludedCount} non HEIC/HEIF ${excludedCount === 1 ? 'image was' : 'images were'} ignored`,
+                    description: `${excludedCount} non HEIC/HEIF ${excludedCount === 1 ? 'image' : 'images'} ignored`,
                   });
                 }, 500);
               }
