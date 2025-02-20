@@ -32,3 +32,13 @@ export const openImageInNewTab = (image: ConvertedImage) => {
     URL.revokeObjectURL(url);
   }, 1000);
 };
+
+export const downloadAllImages = async (images: ConvertedImage[]) => {
+  for (const image of images) {
+    if (image.convertedBlob) {
+      await downloadImage(image);
+      // Small delay between downloads to prevent browser throttling
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+};

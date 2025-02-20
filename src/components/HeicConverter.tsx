@@ -182,6 +182,31 @@ const HeicConverter = () => {
     }
   };
 
+  const showDownloadAll = images.length >= 2;
+  const downloadAllDisabled = isConverting || !images.every(img => img.convertedBlob);
+
+  const handleDownloadAll = async () => {
+    if (isConverting) {
+      toast({
+        title: "Conversion under process",
+        description: "Please wait to Download All..."
+      });
+      return;
+    }
+
+    toast({
+      title: "Starting download",
+      description: "Preparing to download all images..."
+    });
+
+    await downloadAllImages(images);
+
+    toast({
+      title: "Download complete",
+      description: `Successfully downloaded ${images.length} images`
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
@@ -314,47 +339,63 @@ const HeicConverter = () => {
             </div>
           )}
 
-          <div className="flex justify-center space-x-4">
-            <div className={`flex justify-center transition-all duration-500 ${
-              isFormatSelectOpen ? "mb-32" : "mb-0"
-            }`}>
-              <Select 
-                value={format} 
-                onValueChange={(value: "jpg" | "png" | "webp") => {
-                  setFormat(value);
-                }}
-                disabled={isConverting}
-                open={isFormatSelectOpen}
-                onOpenChange={setIsFormatSelectOpen}
-              >
-                <SelectTrigger className={cn(
-                  "w-[90px] focus:ring-0 focus:outline-none",
-                  isConverting && "opacity-50 cursor-not-allowed"
-                )}>
-                  <SelectValue placeholder="Select format" />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  <SelectItem value="jpg">JPG</SelectItem>
-                  <SelectItem value="png">PNG</SelectItem>
-                  <SelectItem value="webp">WEBP</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-center items-center gap-4">
+              <div className={`transition-all duration-500 ${
+                isFormatSelectOpen ? "mb-32" : "mb-0"
+              }`}>
+                <Select 
+                  value={format} 
+                  onValueChange={(value: "jpg" | "png" | "webp") => {
+                    setFormat(value);
+                  }}
+                  disabled={isConverting}
+                  open={isFormatSelectOpen}
+                  onOpenChange={setIsFormatSelectOpen}
+                >
+                  <SelectTrigger className={cn(
+                    "w-[90px] focus:ring-0 focus:outline-none",
+                    isConverting && "opacity-50 cursor-not-allowed"
+                  )}>
+                    <SelectValue placeholder="Select format" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="jpg">JPG</SelectItem>
+                    <SelectItem value="png">PNG</SelectItem>
+                    <SelectItem value="webp">WEBP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {images.length > 0 && (
-            <div className="flex justify-center">
-              <Button 
-                onClick={reset} 
-                variant="outline" 
-                className="w-30 gap-2"
-                disabled={isConverting}
-              >
-                <RefreshCcw className={cn("w-5 h-5", isConverting && "animate-spin")} />
-                Reset
-              </Button>
+              {images.length > 0 && (
+                <Button 
+                  onClick={reset} 
+                  variant="outline" 
+                  className="w-30 gap-2"
+                  disabled={isConverting}
+                >
+                  <RefreshCcw className={cn("w-5 h-5", isConverting && "animate-spin")} />
+                  Reset
+                </Button>
+              )}
             </div>
-          )}
+
+            {showDownloadAll && (
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleDownloadAll}
+                  disabled={downloadAllDisabled}
+                  className={cn(
+                    "w-40 gap-2",
+                    downloadAllDisabled && "opacity-50"
+                  )}
+                >
+                  <Download className="w-5 h-5" />
+                  Download All
+                </Button>
+              </div>
+            )}
+          </div>
 
           {showProgress && (
             <div className="relative p-4 border border-border rounded-lg">
